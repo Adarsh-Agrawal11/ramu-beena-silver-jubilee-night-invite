@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Default Fallback Values (Overridden dynamically from src/theme.js) */
+  --bg-base: #091422;
+  --bg-mid: #11263D;
+  --bg-top: #183452;
+  --card-top: rgba(24, 52, 82, 0.86);
+  --card-mid: rgba(14, 32, 52, 0.93);
+  --card-bottom: rgba(9, 20, 34, 0.97);
+  --surface-deep: rgba(9, 20, 34, 0.90);
+  --header-bg: rgba(9, 20, 34, 0.84);
+  --accent: #EBD5A5;
+  --accent-rgb: 235, 213, 165;
+  --secondary: #A3BFAE;
+  --secondary-rgb: 163, 191, 174;
+  --silver: #F8FAFC;
+  --silver-muted: #CBD5E1;
+  --text-primary: #FFFFFF;
+  --text-body: #E2E8F0;
+  --text-muted: #B8CEC2;
+  --btn-gradient: linear-gradient(135deg, #F8FAFC 0%, #EBD5A5 50%, #A3BFAE 100%);
+  --btn-text: #091422;
+  --shimmer-gradient: linear-gradient(120deg, #CBD5E1 0%, #FFFFFF 24%, #EBD5A5 48%, #A3BFAE 70%, #F8FAFC 88%, #94A3B8 100%);
+  --timeline-gradient: linear-gradient(180deg, #A3BFAE 0%, #F8FAFC 45%, #EBD5A5 85%, #FFFFFF 100%);
+  --timeline-glow: 0 0 14px rgba(235, 213, 165, 0.65), 0 0 24px rgba(163, 191, 174, 0.55);
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: var(--bg-base);
+  color: var(--text-body);
+}
+
+@keyframes silverShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes mandalaSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes mandalaSpinReverse {
+  from { transform: translate(-50%, -50%) rotate(360deg); }
+  to { transform: translate(-50%, -50%) rotate(0deg); }
+}
+
+@keyframes diyaPulse {
+  0%, 100% { opacity: 0.86; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.035); }
+}
+
+@keyframes magicalCrestBurst {
+  0% {
+    opacity: 0;
+    transform: scale(0.62) rotate(-6deg);
+    filter: blur(8px) brightness(1.35);
+  }
+  32% {
+    opacity: 1;
+    transform: scale(1.06) rotate(0deg);
+    filter: blur(0px) brightness(1.12);
+  }
+  72% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0px) brightness(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.22);
+    filter: blur(6px) brightness(1.25);
+  }
+}
+
+@keyframes shockwaveRing {
+  0% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0.35);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.4);
+  }
+}
+
+@keyframes splashBackdropFade {
+  0% { opacity: 1; }
+  75% { opacity: 1; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+@keyframes heroEntryRise {
+  0% { opacity: 0; transform: translateY(18px) scale(0.985); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.liquid-silver-text {
+  background: var(--shimmer-gradient);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: silverShimmer 8.5s ease-in-out infinite;
+}
+
+.royal-themed-card {
+  background: linear-gradient(
+    155deg,
+    var(--card-top) 0%,
+    var(--card-mid) 55%,
+    var(--card-bottom) 100%
+  );
+  box-shadow:
+    0 28px 80px -18px rgba(0, 0, 0, 0.88),
+    inset 0 1px 0 0 rgba(248, 250, 252, 0.22),
+    inset 0 0 38px rgba(var(--secondary-rgb), 0.08);
+}
+
+.royal-themed-bg {
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle at 50% 8%, rgba(var(--secondary-rgb), 0.22) 0%, rgba(var(--accent-rgb), 0.08) 38%, transparent 72%),
+    radial-gradient(circle at 14% 26%, rgba(var(--secondary-rgb), 0.14) 0%, transparent 48%),
+    radial-gradient(circle at 86% 32%, rgba(var(--accent-rgb), 0.10) 0%, transparent 44%),
+    radial-gradient(circle at 50% 82%, rgba(var(--secondary-rgb), 0.18) 0%, transparent 64%),
+    repeating-linear-gradient(
+      45deg,
+      rgba(var(--secondary-rgb), 0.025) 0px,
+      rgba(var(--secondary-rgb), 0.025) 1px,
+      transparent 1px,
+      transparent 30px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(var(--accent-rgb), 0.018) 0px,
+      rgba(var(--accent-rgb), 0.018) 1px,
+      transparent 1px,
+      transparent 30px
+    );
+}
+
+.theme-btn-primary {
+  background: var(--btn-gradient);
+  color: var(--btn-text);
+}
+
+.animate-mandala-slow {
+  animation: mandalaSpin 95s linear infinite;
+}
+
+.animate-mandala-reverse {
+  animation: mandalaSpinReverse 68s linear infinite;
+}
+
+.animate-diya-glow {
+  animation: diyaPulse 4s ease-in-out infinite;
+}
+
+.animate-magical-crest {
+  animation: magicalCrestBurst 1.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-shockwave {
+  animation: shockwaveRing 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-splash-fade {
+  animation: splashBackdropFade 1.3s ease-out forwards;
+}
+
+.animate-hero-rise {
+  animation: heroEntryRise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}

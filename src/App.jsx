@@ -60,16 +60,18 @@ class UniversalAudioPlayer {
     this.onStateChange = onStateChange;
 
     // 1. Instant unlock on any first user interaction anywhere on the document
+    // 1. Instant unlock and play on the very first scroll, touch, or click anywhere
     this.handleFirstInteraction = async () => {
       if (!this.hasAutoStarted && !this.userExplicitlyStopped) {
         try {
           this.audio.muted = false;
+          // Must call play() synchronously inside the user-initiated event
           await this.audio.play();
           this.hasAutoStarted = true;
           this.onStateChange?.(true);
           this.removeInteractionListeners();
         } catch (error) {
-          console.log('Autoplay waiting for interaction:', error);
+          console.log('Playback waiting for next gesture:', error);
         }
       }
     };

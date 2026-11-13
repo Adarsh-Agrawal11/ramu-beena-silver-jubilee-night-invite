@@ -5,7 +5,7 @@
 // downloadable 1080x1920 invitation card will update automatically!
 // ============================================================================
 
-export const ACTIVE_THEME_KEY = 'sageBlue03';
+export const ACTIVE_THEME_KEY = 'royalSapphire';
 
 export const THEMES = {
   sageBlue03: {

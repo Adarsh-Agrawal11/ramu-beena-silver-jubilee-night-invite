@@ -22,187 +22,247 @@ import {
 } from 'lucide-react';
 import { ACTIVE_THEME_KEY, THEMES, applyThemeToDocument } from './theme.js';
 
+const CUSTOM_LOGO_SRC = 'public/logo.png'; // Set to null to keep the built-in crest
+const SITE_URL = 'https://ramubeena-25th.vercel.app/';
+
 // ==========================================
 // 1. AMBIENT ROYAL CELEBRATION SYNTHESIZER
 // ==========================================
-class LuxuryAmbientSynth {
-  constructor() {
-    this.ctx = null;
-    this.isPlaying = false;
-    this.intervalId = null;
-    this.masterGain = null;
-  }
+// ==========================================
+// 1. UNIVERSAL AUDIO PLAYER (AUTO-PAUSE ON TAB SWITCH / HOME)
+// ==========================================
+// ==========================================
+// 1. UNIVERSAL AUDIO PLAYER (AUTO-PLAY ON FIRST CLICK & AUTO-PAUSE)
+// ==========================================
+// ==========================================
+// 1. UNIVERSAL AUDIO PLAYER (AUTOPLAY & TAB-SWITCH AUTO-PAUSE)
+// ==========================================
+// ==========================================
+// 1. UNIVERSAL AUDIO PLAYER (SYNCED WITH REACT STATE)
+// ==========================================
 
-  start() {
-    if (this.isPlaying) return;
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
+// ==========================================
+// 1. UNIVERSAL AUDIO PLAYER (BULLETPROOF AUTOPLAY & SYNC)
+// ==========================================
+// ==========================================
+// 1. UNIVERSAL AUDIO PLAYER (PAUSE ON TAB SWITCH, NO AUTO-RESUME)
+// ==========================================
+class UniversalAudioPlayer {
+  constructor(onStateChange) {
+    this.audio = new Audio('/song.mp3');
+    this.audio.loop = true;
+    this.audio.preload = 'auto';
+    this.audio.volume = 0.28;
+    this.audio.muted = false;
 
-    if (!this.ctx) {
-      this.ctx = new AudioCtx();
-      this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(0.14, this.ctx.currentTime);
-      this.masterGain.connect(this.ctx.destination);
-    }
+    this.userExplicitlyStopped = false;
+    this.hasAutoStarted = false;
+    this.onStateChange = onStateChange;
 
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
-
-    this.isPlaying = true;
-    const chords = [
-      [261.63, 329.63, 392.00, 493.88, 587.33],
-      [293.66, 369.99, 440.00, 523.25, 659.25],
-      [246.94, 329.63, 392.00, 493.88, 587.33],
-      [261.63, 329.63, 392.00, 493.88, 523.25],
-    ];
-    let step = 0;
-
-    const triggerChord = () => {
-      if (!this.isPlaying || !this.ctx) return;
-      const now = this.ctx.currentTime;
-      const notes = chords[step % chords.length];
-
-      notes.forEach((freq, idx) => {
-        const osc = this.ctx.createOscillator();
-        const noteGain = this.ctx.createGain();
-        const filter = this.ctx.createBiquadFilter();
-
-        osc.type = idx === 0 ? 'sine' : 'triangle';
-        osc.frequency.setValueAtTime(freq, now + idx * 0.16);
-
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(920, now);
-
-        noteGain.gain.setValueAtTime(0.0001, now + idx * 0.16);
-        noteGain.gain.exponentialRampToValueAtTime(0.075 / notes.length, now + idx * 0.16 + 0.7);
-        noteGain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.16 + 4.5);
-
-        osc.connect(filter);
-        filter.connect(noteGain);
-        noteGain.connect(this.masterGain);
-
-        osc.start(now + idx * 0.16);
-        osc.stop(now + idx * 0.16 + 4.7);
-      });
-
-      step++;
+    // 1. Instant unlock on any first user interaction anywhere on the document
+    this.handleFirstInteraction = async () => {
+      if (!this.hasAutoStarted && !this.userExplicitlyStopped) {
+        try {
+          this.audio.muted = false;
+          await this.audio.play();
+          this.hasAutoStarted = true;
+          this.onStateChange?.(true);
+          this.removeInteractionListeners();
+        } catch (error) {
+          console.log('Autoplay waiting for interaction:', error);
+        }
+      }
     };
 
-    triggerChord();
-    this.intervalId = setInterval(triggerChord, 4300);
+    this.addInteractionListeners();
+
+    // 2. Pause when switching tabs, minimizing, or hitting home screen (NO auto-resume)
+    this.handleVisibilityChange = () => {
+      if (document.hidden && !this.audio.paused) {
+        this.audio.pause();
+        this.onStateChange?.(false);
+      }
+    };
+
+    this.handlePageHide = () => {
+      if (!this.audio.paused) {
+        this.audio.pause();
+        this.onStateChange?.(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    window.addEventListener('pagehide', this.handlePageHide);
+
+    // 3. Try immediate autoplay on page load/reload
+    this.tryAutoplay();
+  }
+
+  addInteractionListeners() {
+    ['click', 'touchstart', 'keydown', 'scroll'].forEach((event) => {
+      document.addEventListener(event, this.handleFirstInteraction, { passive: true, once: true });
+    });
+  }
+
+  removeInteractionListeners() {
+    ['click', 'touchstart', 'keydown', 'scroll'].forEach((event) => {
+      document.removeEventListener(event, this.handleFirstInteraction);
+    });
+  }
+
+  async tryAutoplay() {
+    if (this.userExplicitlyStopped) return;
+    try {
+      await this.audio.play();
+      this.hasAutoStarted = true;
+      this.onStateChange?.(true);
+      this.removeInteractionListeners();
+    } catch (error) {
+      this.onStateChange?.(false);
+    }
   }
 
   stop() {
-    this.isPlaying = false;
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    this.userExplicitlyStopped = true;
+    this.audio.pause();
+    this.audio.currentTime = 0;
+    this.onStateChange?.(false);
+  }
+
+  async unmute() {
+    this.userExplicitlyStopped = false;
+    this.audio.muted = false;
+    try {
+      await this.audio.play();
+      this.hasAutoStarted = true;
+      this.onStateChange?.(true);
+    } catch (error) {
+      console.log('Could not resume audio:', error);
+      this.onStateChange?.(false);
     }
   }
-}
 
+  destroy() {
+    this.removeInteractionListeners();
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    window.removeEventListener('pagehide', this.handlePageHide);
+    this.audio.pause();
+    this.audio.src = '';
+  }
+}
 // ==========================================
 // 2. THEME-AWARE INDIAN ROYAL LOTUS & SILVER JUBILEE CREST
 // ==========================================
-const IndianSilverJubileeCrest = ({ theme, className = 'w-32 h-32' }) => (
-  <svg viewBox="0 0 260 260" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="royalSilver" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor={theme.silverMuted} />
-        <stop offset="30%" stopColor="#FFFFFF" />
-        <stop offset="52%" stopColor={theme.accent} />
-        <stop offset="78%" stopColor={theme.secondary} />
-        <stop offset="100%" stopColor="#94A3B8" />
-      </linearGradient>
-      <linearGradient id="warmGoldAccent" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor={theme.accent} />
-        <stop offset="55%" stopColor={theme.secondary} />
-        <stop offset="100%" stopColor="#F8FAFC" />
-      </linearGradient>
-      <radialGradient id="crestCore" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor={theme.crestCoreTop} />
-        <stop offset="70%" stopColor={theme.crestCoreMid} />
-        <stop offset="100%" stopColor={theme.crestCoreBottom} />
-      </radialGradient>
-    </defs>
+const IndianSilverJubileeCrest = ({ theme, className = 'w-32 h-32' }) => {
+  if (CUSTOM_LOGO_SRC) {
+    return (
+      <img
+        src={CUSTOM_LOGO_SRC}
+        alt="Ramu & Beena Agrawal Silver Jubilee Crest"
+        className={`${className} object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.65)]`}
+      />
+    );
+  }
 
-    {/* 16-Petal Sacred Lotus Aura */}
-    {Array.from({ length: 16 }).map((_, idx) => {
-      const angle = (idx * 360) / 16;
-      return (
-        <g key={idx} transform={`rotate(${angle} 130 130)`}>
-          <path
-            d="M130 12 C137 26, 137 38, 130 46 C123 38, 123 26, 130 12 Z"
-            stroke="url(#royalSilver)"
-            strokeWidth="1.05"
-            fill={`rgba(${theme.secondaryRgb}, 0.12)`}
-          />
-          <circle cx="130" cy="7" r="1.7" fill="url(#warmGoldAccent)" />
-        </g>
-      );
-    })}
+  return (
+    <svg viewBox="0 0 260 260" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="royalSilver" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={theme.silverMuted} />
+          <stop offset="30%" stopColor="#FFFFFF" />
+          <stop offset="52%" stopColor={theme.accent} />
+          <stop offset="78%" stopColor={theme.secondary} />
+          <stop offset="100%" stopColor="#94A3B8" />
+        </linearGradient>
+        <linearGradient id="warmGoldAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={theme.accent} />
+          <stop offset="55%" stopColor={theme.secondary} />
+          <stop offset="100%" stopColor="#F8FAFC" />
+        </linearGradient>
+        <radialGradient id="crestCore" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={theme.crestCoreTop} />
+          <stop offset="70%" stopColor={theme.crestCoreMid} />
+          <stop offset="100%" stopColor={theme.crestCoreBottom} />
+        </radialGradient>
+      </defs>
 
-    {/* Concentric Filigree Rings */}
-    <circle cx="130" cy="130" r="96" stroke="url(#royalSilver)" strokeWidth="1.2" strokeDasharray="3 4" opacity="0.85" />
-    <circle cx="130" cy="130" r="88" stroke="url(#royalSilver)" strokeWidth="1.8" />
-    <circle cx="130" cy="130" r="81" fill="url(#crestCore)" stroke="url(#warmGoldAccent)" strokeWidth="1" opacity="0.96" />
+      {/* 16-Petal Sacred Lotus Aura */}
+      {Array.from({ length: 16 }).map((_, idx) => {
+        const angle = (idx * 360) / 16;
+        return (
+          <g key={idx} transform={`rotate(${angle} 130 130)`}>
+            <path
+              d="M130 12 C137 26, 137 38, 130 46 C123 38, 123 26, 130 12 Z"
+              stroke="url(#royalSilver)"
+              strokeWidth="1.05"
+              fill={`rgba(${theme.secondaryRgb}, 0.12)`}
+            />
+            <circle cx="130" cy="7" r="1.7" fill="url(#warmGoldAccent)" />
+          </g>
+        );
+      })}
 
-    {/* Top Royal Lotus Crown Motif */}
-    <path
-      d="M114 66 Q130 46 146 66 Q137 63 130 70 Q123 63 114 66 Z"
-      fill="url(#warmGoldAccent)"
-    />
-    <circle cx="130" cy="48" r="2.5" fill={theme.accent} />
+      {/* Concentric Filigree Rings */}
+      <circle cx="130" cy="130" r="96" stroke="url(#royalSilver)" strokeWidth="1.2" strokeDasharray="3 4" opacity="0.85" />
+      <circle cx="130" cy="130" r="88" stroke="url(#royalSilver)" strokeWidth="1.8" />
+      <circle cx="130" cy="130" r="81" fill="url(#crestCore)" stroke="url(#warmGoldAccent)" strokeWidth="1" opacity="0.96" />
 
-    {/* 25 Numeral */}
-    <text
-      x="130"
-      y="124"
-      textAnchor="middle"
-      fill="url(#royalSilver)"
-      fontFamily="'Cormorant Garamond', Georgia, serif"
-      fontSize="56"
-      fontWeight="700"
-      letterSpacing="2"
-    >
-      25
-    </text>
+      {/* Top Royal Lotus Crown Motif */}
+      <path
+        d="M114 66 Q130 46 146 66 Q137 63 130 70 Q123 63 114 66 Z"
+        fill="url(#warmGoldAccent)"
+      />
+      <circle cx="130" cy="48" r="2.5" fill={theme.accent} />
 
-    {/* Ornamental Lotus Divider */}
-    <line x1="78" y1="136" x2="118" y2="136" stroke="url(#royalSilver)" strokeWidth="0.95" opacity="0.8" />
-    <polygon points="130,132 134,136 130,140 126,136" fill="url(#warmGoldAccent)" />
-    <line x1="142" y1="136" x2="182" y2="136" stroke="url(#royalSilver)" strokeWidth="0.95" opacity="0.8" />
+      {/* 25 Numeral */}
+      <text
+        x="130"
+        y="124"
+        textAnchor="middle"
+        fill="url(#royalSilver)"
+        fontFamily="'Cormorant Garamond', Georgia, serif"
+        fontSize="56"
+        fontWeight="700"
+        letterSpacing="2"
+      >
+        25
+      </text>
 
-    {/* Monogram R & B */}
-    <text
-      x="130"
-      y="165"
-      textAnchor="middle"
-      fill="url(#royalSilver)"
-      fontFamily="'Cormorant Garamond', Georgia, serif"
-      fontSize="26"
-      fontStyle="italic"
-      fontWeight="600"
-      letterSpacing="4"
-    >
-      R &amp; B
-    </text>
+      {/* Ornamental Lotus Divider */}
+      <line x1="78" y1="136" x2="118" y2="136" stroke="url(#royalSilver)" strokeWidth="0.95" opacity="0.8" />
+      <polygon points="130,132 134,136 130,140 126,136" fill="url(#warmGoldAccent)" />
+      <line x1="142" y1="136" x2="182" y2="136" stroke="url(#royalSilver)" strokeWidth="0.95" opacity="0.8" />
 
-    {/* Subtitle */}
-    <text
-      x="130"
-      y="188"
-      textAnchor="middle"
-      fill={theme.textMuted}
-      fontFamily="'Montserrat', sans-serif"
-      fontSize="8.5"
-      letterSpacing="3.5"
-    >
-      SILVER JUBILEE
-    </text>
-  </svg>
-);
+      {/* Monogram R & B */}
+      <text
+        x="130"
+        y="165"
+        textAnchor="middle"
+        fill="url(#royalSilver)"
+        fontFamily="'Cormorant Garamond', Georgia, serif"
+        fontSize="26"
+        fontStyle="italic"
+        fontWeight="600"
+        letterSpacing="4"
+      >
+        R &amp; B
+      </text>
+
+      {/* Subtitle */}
+      <text
+        x="130"
+        y="188"
+        textAnchor="middle"
+        fill={theme.textMuted}
+        fontFamily="'Montserrat', sans-serif"
+        fontSize="8.5"
+        letterSpacing="3.5"
+      >
+        SILVER JUBILEE
+      </text>
+    </svg>
+  );
+};
 
 // ==========================================
 // 3. THEME-AWARE SACRED LOTUS MANDALA SVG
@@ -317,7 +377,7 @@ const RoyalCelebrationBackground = ({ theme }) => {
       vy: -Math.random() * 0.34 - 0.08,
       alpha: Math.random() * 0.7 + 0.25,
       pulse: Math.random() * Math.PI * 2,
-      tone: idx % 3, // 0: Accent, 1: Secondary, 2: Silver
+      tone: idx % 3,
       isStar: Math.random() > 0.66,
     }));
 
@@ -435,42 +495,49 @@ const TIMELINE_EVENTS = [
   {
     step: '01',
     title: 'Guest Arrival',
-    subtitle: 'Warm Welcome & Greetings',
+    subtitle: 'A Royal Welcome with Warmth & Festive Cheer',
     timing: 'Timing to be announced',
     icon: Users,
   },
   {
     step: '02',
     title: "Ramu & Beena's Grand Entry",
-    subtitle: 'Celebrating Twenty-Five Years Together',
+    subtitle: 'Welcoming the Couple of the Hour · 25 Years Strong',
     timing: 'Timing to be announced',
     icon: Crown,
   },
   {
     step: '03',
     title: 'Varmala Ceremony',
-    subtitle: 'Exchanging Garlands of Love & Blessings',
+    subtitle: 'Renewing Vows with Garlands of Love & Eternal Grace',
     timing: 'Timing to be announced',
     icon: Heart,
   },
   {
     step: '04',
+    title: 'Ring Exchange',
+    subtitle: 'Sealing Twenty-Five Years of Love with Timeless Rings',
+    timing: 'Timing to be announced',
+    icon: Sparkles,
+  },
+  {
+    step: '05',
     title: 'Cake Cutting',
-    subtitle: 'A Sweet Silver Jubilee Milestone',
+    subtitle: 'Toasting a Sweet Silver Milestone Surrounded by Loved Ones',
     timing: 'Timing to be announced',
     icon: Cake,
   },
   {
-    step: '05',
+    step: '06',
     title: 'Music & Celebration',
-    subtitle: 'An Evening of Joy, Rhythm & Togetherness',
+    subtitle: 'An Enchanting Evening of Melodies, Laughter & Dance',
     timing: 'Timing to be announced',
     icon: Music,
   },
   {
-    step: '06',
+    step: '07',
     title: 'Dinner',
-    subtitle: 'Royal Festive Feast with Family & Friends',
+    subtitle: 'A Grand Festive Feast Crafted for Loved Ones',
     timing: 'Timing to be announced',
     icon: Utensils,
   },
@@ -551,17 +618,17 @@ const ConnectedEventTimeline = ({ theme }) => {
               className="text-[11px] uppercase tracking-[0.3em]"
               style={{ color: theme.accent }}
             >
-              Celebration Journey
+              The Evening Unfolds
             </span>
           </div>
           <h2 className="font-editorial text-4xl md:text-5xl liquid-silver-text font-semibold">
-            Sequence of Events
+            Here&apos;s What&apos;s in Store
           </h2>
           <p
-            className="text-xs uppercase tracking-[0.25em] mt-3"
+            className="text-sm mt-3 max-w-xl mx-auto"
             style={{ color: theme.textMuted }}
           >
-            Sunday, 27 December 2026 · Barbil
+            From the first welcome to the final celebration, here&apos;s how the evening will unfold.
           </p>
         </div>
 
@@ -729,25 +796,70 @@ const ConnectedEventTimeline = ({ theme }) => {
 // ==========================================
 // 7. THEME-AWARE INVITATION CARD GENERATOR (1080x1920)
 // ==========================================
-const renderRoyalInvitationCanvas = (canvas, theme) => {
+const renderRoyalInvitationCanvas = async (canvas, theme) => {
   const ctx = canvas.getContext('2d');
   const W = 1080;
   const H = 1920;
   canvas.width = W;
   canvas.height = H;
 
-  // 1. Dynamic Theme Radial Gradient
-  const bgGrad = ctx.createRadialGradient(W / 2, H * 0.34, 60, W / 2, H / 2, H * 0.82);
+  // Helper: Rounded rectangle path
+  const roundRectPath = (x, y, w, h, r) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  };
+
+  // Helper: Draw 4-point star sparkle
+  const drawSparkle = (cx, cy, size, color) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - size);
+    ctx.lineTo(cx + size * 0.26, cy - size * 0.26);
+    ctx.lineTo(cx + size, cy);
+    ctx.lineTo(cx + size * 0.26, cy + size * 0.26);
+    ctx.lineTo(cx, cy + size);
+    ctx.lineTo(cx - size * 0.26, cy + size * 0.26);
+    ctx.lineTo(cx - size, cy);
+    ctx.lineTo(cx - size * 0.26, cy - size * 0.26);
+    ctx.closePath();
+    ctx.fill();
+  };
+
+  // 1. Rich Multi-Layered Royal Velvet Background
+  const bgGrad = ctx.createRadialGradient(W / 2, H * 0.26, 40, W / 2, H * 0.5, H * 0.88);
   bgGrad.addColorStop(0, theme.bgTop);
-  bgGrad.addColorStop(0.48, theme.bgMid);
+  bgGrad.addColorStop(0.45, theme.bgMid);
   bgGrad.addColorStop(1, theme.bgBase);
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // 2. Subtle Indian Jaali Diagonal Lattice
-  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.045)`;
+  // Warm Ambient Halo behind Crest & Couple Names
+  const crestGlow = ctx.createRadialGradient(W / 2, 430, 10, W / 2, 430, 420);
+  crestGlow.addColorStop(0, `rgba(${theme.accentRgb}, 0.22)`);
+  crestGlow.addColorStop(0.55, `rgba(${theme.secondaryRgb}, 0.09)`);
+  crestGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = crestGlow;
+  ctx.fillRect(0, 0, W, H);
+
+  const nameGlow = ctx.createRadialGradient(W / 2, 920, 20, W / 2, 920, 460);
+  nameGlow.addColorStop(0, `rgba(${theme.secondaryRgb}, 0.14)`);
+  nameGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = nameGlow;
+  ctx.fillRect(0, 450, W, 900);
+
+  // 2. Delicate Indian Jaali Lattice Texture
+  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.04)`;
   ctx.lineWidth = 1;
-  for (let offset = -H; offset < W + H; offset += 48) {
+  for (let offset = -H; offset < W + H; offset += 54) {
     ctx.beginPath();
     ctx.moveTo(offset, 0);
     ctx.lineTo(offset + H, H);
@@ -759,191 +871,282 @@ const renderRoyalInvitationCanvas = (canvas, theme) => {
     ctx.stroke();
   }
 
-  // 3. Sacred Lotus Mandala Watermark behind Crest
+  // 3. Intricate Double-Layer Sacred Lotus Mandala behind Crest
   ctx.save();
-  ctx.translate(W / 2, 430);
+  ctx.translate(W / 2, 435);
   for (let i = 0; i < 24; i++) {
     ctx.rotate((Math.PI * 2) / 24);
-    ctx.strokeStyle = `rgba(${theme.secondaryRgb}, 0.22)`;
-    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = `rgba(${theme.secondaryRgb}, 0.24)`;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(0, -165);
-    ctx.quadraticCurveTo(22, -230, 0, -282);
-    ctx.quadraticCurveTo(-22, -230, 0, -165);
+    ctx.moveTo(0, -168);
+    ctx.quadraticCurveTo(26, -242, 0, -298);
+    ctx.quadraticCurveTo(-26, -242, 0, -168);
+    ctx.stroke();
+
+    ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.18)`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -210);
+    ctx.quadraticCurveTo(18, -268, 0, -328);
+    ctx.quadraticCurveTo(-18, -268, 0, -210);
     ctx.stroke();
   }
   ctx.restore();
 
-  // 4. Luminous Theme Sparkles
-  for (let i = 0; i < 120; i++) {
-    const sx = ((i * 197) % (W - 90)) + 45;
-    const sy = ((i * 313) % (H - 90)) + 45;
-    const sr = (i % 3) + 1.3;
-    ctx.fillStyle =
-      i % 3 === 0
-        ? `rgba(${theme.accentRgb}, ${0.24 + (i % 4) * 0.08})`
-        : i % 3 === 1
-        ? `rgba(${theme.secondaryRgb}, ${0.24 + (i % 4) * 0.08})`
-        : `rgba(248, 250, 252, ${0.18 + (i % 5) * 0.07})`;
-    ctx.beginPath();
-    ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-    ctx.fill();
+  // 4. Shimmering Starlight & Bokek Motes
+  for (let i = 0; i < 95; i++) {
+    const sx = ((i * 197 + 61) % (W - 110)) + 55;
+    const sy = ((i * 313 + 89) % (H - 110)) + 55;
+    if (i % 4 === 0) {
+      drawSparkle(
+        sx,
+        sy,
+        (i % 3) * 3 + 5,
+        i % 8 === 0 ? `rgba(${theme.accentRgb}, 0.55)` : `rgba(${theme.secondaryRgb}, 0.45)`
+      );
+    } else {
+      ctx.fillStyle =
+        i % 3 === 0
+          ? `rgba(${theme.accentRgb}, 0.32)`
+          : `rgba(248, 250, 252, 0.24)`;
+      ctx.beginPath();
+      ctx.arc(sx, sy, (i % 2) + 1.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
-  // 5. Metallic Silver + Theme Accent + Secondary Gradient
-  const royalMetalGrad = ctx.createLinearGradient(120, 100, W - 120, H - 100);
+  // 5. Metallic Champagne-Silver-Sapphire Gradient
+  const royalMetalGrad = ctx.createLinearGradient(120, 80, W - 120, H - 80);
   royalMetalGrad.addColorStop(0, theme.silverMuted);
-  royalMetalGrad.addColorStop(0.28, '#FFFFFF');
-  royalMetalGrad.addColorStop(0.52, theme.accent);
-  royalMetalGrad.addColorStop(0.76, theme.secondary);
-  royalMetalGrad.addColorStop(1, '#94A3B8');
+  royalMetalGrad.addColorStop(0.25, '#FFFFFF');
+  royalMetalGrad.addColorStop(0.5, theme.accent);
+  royalMetalGrad.addColorStop(0.78, theme.secondary);
+  royalMetalGrad.addColorStop(1, '#CBD5E1');
 
-  // Outer Royal Frame
+  // Outer Double Royal Frame
   ctx.strokeStyle = royalMetalGrad;
   ctx.lineWidth = 4;
-  ctx.strokeRect(44, 44, W - 88, H - 88);
+  ctx.strokeRect(42, 42, W - 84, H - 84);
 
-  // Scalloped Mughal Jharokha Arch Inner Frame
+  ctx.strokeStyle = `rgba(${theme.secondaryRgb}, 0.32)`;
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(54, 54, W - 108, H - 108);
+
+  // Sculpted Mughal Jharokha Arch Frame
   ctx.save();
-  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.65)`;
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.72)`;
+  ctx.lineWidth = 2.4;
   ctx.beginPath();
-  ctx.moveTo(72, H - 72);
-  ctx.lineTo(72, 340);
-  ctx.quadraticCurveTo(72, 165, 250, 145);
-  ctx.quadraticCurveTo(400, 128, W / 2, 82);
-  ctx.quadraticCurveTo(W - 400, 128, W - 250, 145);
-  ctx.quadraticCurveTo(W - 72, 165, W - 72, 340);
-  ctx.lineTo(W - 72, H - 72);
+  ctx.moveTo(74, H - 74);
+  ctx.lineTo(74, 345);
+  ctx.quadraticCurveTo(74, 165, 255, 142);
+  ctx.quadraticCurveTo(405, 124, W / 2, 76);
+  ctx.quadraticCurveTo(W - 405, 124, W - 255, 142);
+  ctx.quadraticCurveTo(W - 74, 165, W - 74, 345);
+  ctx.lineTo(W - 74, H - 74);
   ctx.closePath();
   ctx.stroke();
   ctx.restore();
 
-  // 6. Top Blessing Header
-  ctx.textAlign = 'center';
-  ctx.fillStyle = theme.accent;
-  ctx.font = '500 21px Montserrat, sans-serif';
-  ctx.fillText('WITH THE BLESSINGS OF ALMIGHTY & ELDERS', W / 2, 198);
+  // Bottom Corner Lotus Rosette Ornaments
+  [
+    [118, H - 118],
+    [W - 118, H - 118],
+  ].forEach(([cx, cy]) => {
+    ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.45)`;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+    ctx.stroke();
+    drawSparkle(cx, cy, 11, `rgba(${theme.accentRgb}, 0.7)`);
+  });
 
-  // 7. Silver Jubilee Crest Medallion
-  const crestY = 430;
+  // 6. Top Blessing Pill Banner
+  ctx.textAlign = 'center';
+  roundRectPath(W / 2 - 370, 210, 740, 46, 23);
   ctx.fillStyle = theme.surfaceDeep;
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.42)`;
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+
+  ctx.fillStyle = theme.accent;
+  ctx.font = '600 18px Montserrat, sans-serif';
+  ctx.fillText('WITH THE GRACE OF THE ALMIGHTY & BLESSINGS OF OUR ELDERS', W / 2, 239);
+
+  // 7. Royal Silver Jubilee Crest Medallion
+  const crestY = 435;
+  const medallionGrad = ctx.createRadialGradient(W / 2, crestY - 40, 20, W / 2, crestY, 162);
+  medallionGrad.addColorStop(0, theme.bgTop);
+  medallionGrad.addColorStop(1, theme.surfaceDeep);
+  ctx.fillStyle = medallionGrad;
   ctx.beginPath();
-  ctx.arc(W / 2, crestY, 154, 0, Math.PI * 2);
+  ctx.arc(W / 2, crestY, 158, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.strokeStyle = royalMetalGrad;
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 4.5;
   ctx.beginPath();
-  ctx.arc(W / 2, crestY, 154, 0, Math.PI * 2);
+  ctx.arc(W / 2, crestY, 158, 0, Math.PI * 2);
   ctx.stroke();
 
-  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.68)`;
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.72)`;
+  ctx.lineWidth = 1.6;
   ctx.setLineDash([6, 7]);
   ctx.beginPath();
-  ctx.arc(W / 2, crestY, 172, 0, Math.PI * 2);
+  ctx.arc(W / 2, crestY, 178, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Lotus Crown above 25
-  ctx.fillStyle = theme.accent;
-  ctx.beginPath();
-  ctx.moveTo(W / 2, crestY - 122);
-  ctx.quadraticCurveTo(W / 2 + 16, crestY - 102, W / 2, crestY - 90);
-  ctx.quadraticCurveTo(W / 2 - 16, crestY - 102, W / 2, crestY - 122);
-  ctx.fill();
+  if (CUSTOM_LOGO_SRC) {
+    await new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(W / 2, crestY, 146, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(img, W / 2 - 146, crestY - 146, 292, 292);
+        ctx.restore();
+        resolve();
+      };
+      img.onerror = resolve;
+      img.src = CUSTOM_LOGO_SRC;
+    });
+  } else {
+    // Royal Lotus Crown above 25
+    ctx.fillStyle = theme.accent;
+    ctx.beginPath();
+    ctx.moveTo(W / 2, crestY - 126);
+    ctx.quadraticCurveTo(W / 2 + 18, crestY - 104, W / 2, crestY - 90);
+    ctx.quadraticCurveTo(W / 2 - 18, crestY - 104, W / 2, crestY - 126);
+    ctx.fill();
 
-  ctx.fillStyle = royalMetalGrad;
-  ctx.font = '700 122px "Cormorant Garamond", Georgia, serif';
-  ctx.fillText('25', W / 2, crestY + 18);
+    ctx.fillStyle = royalMetalGrad;
+    ctx.font = '700 126px "Cormorant Garamond", Georgia, serif';
+    ctx.fillText('25', W / 2, crestY + 18);
 
-  ctx.font = 'italic 600 42px "Cormorant Garamond", Georgia, serif';
-  ctx.fillText('R & B', W / 2, crestY + 86);
+    // Fine Line & Diamond inside Crest
+    ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.55)`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(W / 2 - 76, crestY + 38);
+    ctx.lineTo(W / 2 - 12, crestY + 38);
+    ctx.moveTo(W / 2 + 12, crestY + 38);
+    ctx.lineTo(W / 2 + 76, crestY + 38);
+    ctx.stroke();
+    drawSparkle(W / 2, crestY + 38, 7, theme.accent);
 
-  // 8. Invitation Title & Couple Names
-  ctx.fillStyle = theme.textMuted;
-  ctx.font = '500 22px Montserrat, sans-serif';
-  ctx.fillText('WE CORDIALLY INVITE YOU TO CELEBRATE THE', W / 2, 685);
+    ctx.font = 'italic 600 42px "Cormorant Garamond", Georgia, serif';
+    ctx.fillText('R & B', W / 2, crestY + 92);
+  }
 
-  ctx.fillStyle = theme.accent;
-  ctx.font = '700 46px "Cormorant Garamond", Georgia, serif';
-  ctx.fillText('25TH SILVER JUBILEE CELEBRATION', W / 2, 750);
-
-  // Ornamental Divider
-  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.58)`;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(220, 795);
-  ctx.lineTo(W - 220, 795);
-  ctx.stroke();
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '700 98px "Cormorant Garamond", Georgia, serif';
-  ctx.fillText('Ramu & Beena', W / 2, 912);
-
-  ctx.font = 'italic 600 76px "Cormorant Garamond", Georgia, serif';
-  ctx.fillStyle = royalMetalGrad;
-  ctx.fillText('Agrawal', W / 2, 996);
-
-  // 9. Frosted Royal Details Card
-  const cardX = 115;
-  const cardY = 1065;
-  const cardW = W - 230;
-  const cardH = 470;
-
-  ctx.fillStyle = theme.cardMid;
-  ctx.fillRect(cardX, cardY, cardW, cardH);
-  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.50)`;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(cardX, cardY, cardW, cardH);
-
-  ctx.fillStyle = theme.accent;
-  ctx.font = '600 21px Montserrat, sans-serif';
-  ctx.fillText('DATE & OCCASION', W / 2, cardY + 74);
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '700 46px "Cormorant Garamond", Georgia, serif';
-  ctx.fillText('Sunday, 27 December 2026', W / 2, cardY + 130);
-
-  ctx.fillStyle = theme.textMuted;
-  ctx.font = '400 25px Montserrat, sans-serif';
-  ctx.fillText('25th Wedding Anniversary Celebration', W / 2, cardY + 174);
-
-  ctx.strokeStyle = `rgba(${theme.secondaryRgb}, 0.32)`;
-  ctx.beginPath();
-  ctx.moveTo(cardX + 90, cardY + 218);
-  ctx.lineTo(cardX + cardW - 90, cardY + 218);
-  ctx.stroke();
-
-  ctx.fillStyle = theme.accent;
-  ctx.font = '600 21px Montserrat, sans-serif';
-  ctx.fillText('VENUE', W / 2, cardY + 276);
-
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '700 40px "Cormorant Garamond", Georgia, serif';
-  ctx.fillText('Sitaram Rungta Municipal Town Hall', W / 2, cardY + 330);
-
-  ctx.fillStyle = theme.textMuted;
-  ctx.font = '400 25px Montserrat, sans-serif';
-  ctx.fillText('Barbil, Odisha', W / 2, cardY + 374);
-
-  // 10. Host & Contact Footer
+  // 8. Invitation Title, Couple Names & Poetic Verse
   ctx.fillStyle = theme.textMuted;
   ctx.font = '500 21px Montserrat, sans-serif';
-  ctx.fillText('WITH WARM REGARDS FROM', W / 2, 1625);
-
-  ctx.fillStyle = royalMetalGrad;
-  ctx.font = 'italic 700 46px "Cormorant Garamond", Georgia, serif';
-  ctx.fillText('Adarsh, Shradha & the Agrawal Family', W / 2, 1686);
-
-  ctx.fillStyle = theme.secondary;
-  ctx.font = '400 20px Montserrat, sans-serif';
-  ctx.fillText('RSVP: +91 78548 79210  ·  +91 79785 37640', W / 2, 1744);
+  ctx.fillText('HONORING TWENTY-FIVE GOLDEN YEARS OF', W / 2, 682);
 
   ctx.fillStyle = theme.accent;
-  ctx.font = '500 18px Montserrat, sans-serif';
-  ctx.fillText('https://ramubeenasilverjubilee.vercel.app/', W / 2, 1802);
+  ctx.font = '700 46px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText('25TH SILVER JUBILEE CELEBRATION', W / 2, 745);
+
+  // Ornamental Diamond Divider
+  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.62)`;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(210, 786);
+  ctx.lineTo(W / 2 - 24, 786);
+  ctx.moveTo(W / 2 + 24, 786);
+  ctx.lineTo(W - 210, 786);
+  ctx.stroke();
+  drawSparkle(W / 2, 786, 11, theme.accent);
+
+  // Couple Names
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 104px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText('Ramu & Beena', W / 2, 902);
+
+  ctx.font = 'italic 600 78px "Cormorant Garamond", Georgia, serif';
+  ctx.fillStyle = royalMetalGrad;
+  ctx.fillText('Agrawal', W / 2, 984);
+
+  // Poetic Invitation Line
+  ctx.fillStyle = theme.textBody;
+  ctx.font = 'italic 500 29px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText(
+    '“Join us for an evening of blessings, music, and joyous togetherness”',
+    W / 2,
+    1046
+  );
+
+  // 9. Rounded Frosted Royal Details Card
+  const cardX = 116;
+  const cardY = 1094;
+  const cardW = W - 232;
+  const cardH = 472;
+
+  roundRectPath(cardX, cardY, cardW, cardH, 34);
+  ctx.fillStyle = theme.cardMid;
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.55)`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Inner subtle border inside card
+  roundRectPath(cardX + 12, cardY + 12, cardW - 24, cardH - 24, 24);
+  ctx.strokeStyle = `rgba(${theme.secondaryRgb}, 0.22)`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = theme.accent;
+  ctx.font = '600 20px Montserrat, sans-serif';
+  ctx.fillText('DATE & TIME', W / 2, cardY + 74);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 48px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText('Sunday, 27 December 2026', W / 2, cardY + 132);
+
+  ctx.fillStyle = theme.textMuted;
+  ctx.font = '400 24px Montserrat, sans-serif';
+  ctx.fillText('Evening · Exact timing to follow', W / 2, cardY + 176);
+
+  // Card Center Divider with Star
+  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.35)`;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(cardX + 95, cardY + 224);
+  ctx.lineTo(W / 2 - 20, cardY + 224);
+  ctx.moveTo(W / 2 + 20, cardY + 224);
+  ctx.lineTo(cardX + cardW - 95, cardY + 224);
+  ctx.stroke();
+  drawSparkle(W / 2, cardY + 224, 8, theme.accent);
+
+  ctx.fillStyle = theme.accent;
+  ctx.font = '600 20px Montserrat, sans-serif';
+  ctx.fillText('CELEBRATION VENUE', W / 2, cardY + 282);
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = '700 42px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText('Sitaram Rungta Municipal Town Hall', W / 2, cardY + 338);
+
+  ctx.fillStyle = theme.textMuted;
+  ctx.font = '400 25px Montserrat, sans-serif';
+  ctx.fillText('Barbil, District Keonjhar, Odisha', W / 2, cardY + 384);
+
+  // 10. Clean Host & RSVP Footer (No Website URL on Card Image)
+  ctx.fillStyle = theme.textMuted;
+  ctx.font = '500 21px Montserrat, sans-serif';
+  ctx.fillText('WITH WARM REGARDS,', W / 2, 1654);
+
+  ctx.fillStyle = royalMetalGrad;
+  ctx.font = 'italic 700 54px "Cormorant Garamond", Georgia, serif';
+  ctx.fillText('The Agrawal Family', W / 2, 1720);
+
+  ctx.fillStyle = theme.secondary;
+  ctx.font = '500 21px Montserrat, sans-serif';
+  ctx.fillText('RSVP: +91 78548 79210   ·   +91 79785 37640', W / 2, 1782);
 
   return canvas.toDataURL('image/png');
 };
@@ -953,23 +1156,22 @@ const WhatsAppInviteModal = ({ isOpen, onClose, theme }) => {
   const [imageUrl, setImageUrl] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const shareMessage = `✨ *25th Silver Jubilee Celebration* ✨
+  const shareMessage = `✨ *25th Silver Jubilee Invitation* ✨
 
-With the blessings of Almighty & Elders, we cordially invite you to celebrate 25 years of togetherness of
+With the Grace of the Almighty & Blessings of Our Elders, we warmly invite you and your family to celebrate 25 golden years of
 *Ramu & Beena Agrawal*
 
 📅 *Date:* Sunday, 27 December 2026
 📍 *Venue:* Sitaram Rungta Municipal Town Hall, Barbil, Odisha
 
-🌐 *Digital Invitation:* https://ramubeenasilverjubilee.vercel.app/
+🌐 *Digital Invitation:* ${SITE_URL}
 
 With warm regards,
-*Adarsh, Shradha & the Agrawal Family* 🙏✨`;
+*The Agrawal Family* 🙏✨`;
 
   useEffect(() => {
     if (!isOpen || !canvasRef.current) return;
-    const url = renderRoyalInvitationCanvas(canvasRef.current, theme);
-    setImageUrl(url);
+    renderRoyalInvitationCanvas(canvasRef.current, theme).then(setImageUrl);
   }, [isOpen, theme]);
 
   if (!isOpen) return null;
@@ -1001,6 +1203,7 @@ With warm regards,
             files: [file],
             title: 'Ramu & Beena Agrawal - 25th Silver Jubilee',
             text: shareMessage,
+            url: SITE_URL,
           });
           return;
         }
@@ -1036,10 +1239,10 @@ With warm regards,
 
         <div className="mb-6">
           <p className="text-xs uppercase tracking-[0.28em]" style={{ color: theme.accent }}>
-            Royal Invitation Card
+            A Keepsake to Cherish
           </p>
           <h3 className="font-editorial text-3xl md:text-4xl text-white mt-1">
-            Download &amp; Share Invitation
+            Save &amp; Share the Invite
           </h3>
         </div>
 
@@ -1058,7 +1261,7 @@ With warm regards,
 
           <div className="md:col-span-7 space-y-5">
             <p className="text-sm leading-relaxed" style={{ color: theme.textBody }}>
-              Save this high-resolution <strong className="text-white">Royal Silver Jubilee Invitation Card</strong> or share it directly with family and friends on WhatsApp.
+              Download the official <strong className="text-white">Silver Jubilee Invitation Card</strong> to your device or share it effortlessly with loved ones on WhatsApp.
             </p>
 
             <div
@@ -1113,7 +1316,7 @@ With warm regards,
 // ==========================================
 export default function App() {
   const [themeKey, setThemeKey] = useState(ACTIVE_THEME_KEY);
-  const theme = THEMES[themeKey] || THEMES.sageBlue03;
+  const theme = THEMES[themeKey] || THEMES.royalSapphire;
 
   const [showLogoReveal, setShowLogoReveal] = useState(true);
   const [musicOn, setMusicOn] = useState(false);
@@ -1125,15 +1328,6 @@ export default function App() {
   const synthRef = useRef(null);
   const inlineCanvasRef = useRef(null);
 
-  // Apply CSS custom properties whenever theme changes
-  useEffect(() => {
-    applyThemeToDocument(theme);
-    if (inlineCanvasRef.current) {
-      const url = renderRoyalInvitationCanvas(inlineCanvasRef.current, theme);
-      setInlineCardUrl(url);
-    }
-  }, [theme]);
-
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowLogoReveal(false);
@@ -1142,11 +1336,37 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    synthRef.current = new LuxuryAmbientSynth();
-    return () => {
-      if (synthRef.current) synthRef.current.stop();
-    };
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
+
+  // Apply CSS custom properties whenever theme changes
+  useEffect(() => {
+    applyThemeToDocument(theme);
+    if (inlineCanvasRef.current) {
+      renderRoyalInvitationCanvas(inlineCanvasRef.current, theme).then(setInlineCardUrl);
+    }
+  }, [theme]);
+
+  useEffect(() => {
+  const player = new UniversalAudioPlayer((isPlaying) => {
+    setMusicOn(isPlaying);
+  });
+
+  synthRef.current = player;
+
+  return () => {
+    player.destroy();
+    if (synthRef.current === player) {
+      synthRef.current = null;
+    }
+  };
+}, []);
 
   // Days-only countdown to Sunday, 27 December 2026
   useEffect(() => {
@@ -1163,16 +1383,16 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  const toggleMusic = () => {
-    if (!synthRef.current) return;
-    if (musicOn) {
-      synthRef.current.stop();
-      setMusicOn(false);
-    } else {
-      synthRef.current.start();
-      setMusicOn(true);
-    }
-  };
+  const toggleMusic = async () => {
+  if (!synthRef.current) return;
+
+  if (musicOn) {
+    synthRef.current.stop();
+    setMusicOn(false);
+  } else {
+    await synthRef.current.unmute();
+  }
+};
 
   const handleInlineDownload = () => {
     if (!inlineCardUrl) return;
@@ -1183,16 +1403,16 @@ export default function App() {
   };
 
   const handleInlineShare = async () => {
-    const shareText = `✨ *25th Silver Jubilee Celebration* ✨
+    const shareText = `✨ *25th Silver Jubilee Invitation* ✨
 
-With the blessings of Almighty & Elders, we cordially invite you to celebrate 25 years of togetherness of *Ramu & Beena Agrawal*.
+With the Grace of the Almighty & Blessings of Our Elders, we warmly invite you and your family to celebrate 25 golden years of *Ramu & Beena Agrawal*.
 
 📅 *Date:* Sunday, 27 December 2026
 📍 *Venue:* Sitaram Rungta Municipal Town Hall, Barbil, Odisha
-🌐 *Invitation:* https://ramubeenasilverjubilee.vercel.app/
+🌐 *Invitation:* ${SITE_URL}
 
-Warm regards,
-*Adarsh, Shradha & the Agrawal Family* 🙏`;
+With warm regards,
+*The Agrawal Family* 🙏`;
 
     if (inlineCardUrl && navigator.canShare) {
       try {
@@ -1206,6 +1426,7 @@ Warm regards,
             files: [file],
             title: 'Ramu & Beena Agrawal - 25th Silver Jubilee',
             text: shareText,
+            url: SITE_URL,
           });
           return;
         }
@@ -1448,7 +1669,7 @@ Warm regards,
               className="text-[10px] sm:text-[11px] uppercase tracking-[0.34em]"
               style={{ color: theme.accent }}
             >
-              With Blessings of Almighty &amp; Elders
+              With the Grace of the Almighty &amp; Blessings of Our Elders
             </span>
             <Sparkles className="w-3.5 h-3.5" style={{ color: theme.accent }} />
           </div>
@@ -1502,7 +1723,7 @@ Warm regards,
               className="text-[11px] sm:text-xs uppercase tracking-[0.34em] mb-5"
               style={{ color: theme.accent }}
             >
-              Celebrating 25 Years of Togetherness
+              A Quarter Century of Love, Devotion &amp; Grace
             </p>
 
             <IndianSilverJubileeCrest
@@ -1514,7 +1735,7 @@ Warm regards,
               className="text-xs uppercase tracking-[0.32em] mb-3"
               style={{ color: theme.textMuted }}
             >
-              Silver Jubilee Anniversary of
+              Honoring Twenty-Five Golden Years of
             </p>
 
             <h1 className="font-editorial text-5xl sm:text-7xl md:text-[5.25rem] font-bold liquid-silver-text tracking-tight leading-[1.04]">
@@ -1551,7 +1772,7 @@ Warm regards,
               className="font-editorial italic text-xl sm:text-2xl max-w-2xl mx-auto leading-relaxed mb-8"
               style={{ color: theme.textBody }}
             >
-              “With heartfelt joy, we invite you and your family to grace the 25th Wedding Anniversary Celebration of Ramu &amp; Beena Agrawal.”
+              “Twenty-five years of shared dreams, quiet strength, and unwavering love—join us as we celebrate the Silver Jubilee of Ramu &amp; Beena Agrawal with an evening of joy, blessings, and togetherness.”
             </p>
 
             {/* Celebration Date Pill */}
@@ -1582,7 +1803,7 @@ Warm regards,
             </div>
 
             {/* Days-Only Countdown Medallion */}
-            <div className="max-w-xs mx-auto mb-10">
+            <div className="max-w-sm mx-auto mb-10">
               <div
                 className="relative py-5 px-8 rounded-3xl border shadow-[0_15px_40px_rgba(0,0,0,0.85)] animate-diya-glow"
                 style={{
@@ -1591,10 +1812,10 @@ Warm regards,
                 }}
               >
                 <p
-                  className="text-[10px] uppercase tracking-[0.32em] mb-1"
+                  className="text-[10px] uppercase tracking-[0.28em] mb-1"
                   style={{ color: theme.accent }}
                 >
-                  Countdown to the Celebration
+                  The Big Day Is Almost Here!
                 </p>
                 <div className="font-editorial text-5xl sm:text-6xl font-bold liquid-silver-text leading-none my-1">
                   {daysLeft}
@@ -1605,10 +1826,16 @@ Warm regards,
                 >
                   {daysLeft === 1 ? 'Day to Go' : 'Days to Go'}
                 </p>
+                <p
+                  className="text-[11px] italic mt-2"
+                  style={{ color: theme.textBody }}
+                >
+                  One special evening. A celebration worth dressing up for.
+                </p>
               </div>
             </div>
 
-            {/* Primary Action CTAs (Preserving Save the Date Redirect) */}
+            {/* Primary Action CTAs */}
             <div className="relative z-10 flex flex-wrap items-center justify-center gap-4">
               <a
                 href="https://ramubeenasilverjubilee.vercel.app/"
@@ -1651,10 +1878,10 @@ Warm regards,
               className="text-xs uppercase tracking-[0.34em] mb-2"
               style={{ color: theme.accent }}
             >
-              Celebration Overview
+              The Celebration
             </p>
             <h2 className="font-editorial text-4xl md:text-5xl liquid-silver-text font-semibold">
-              The Evening at a Glance
+              An Evening Woven in Silver &amp; Grace
             </h2>
           </div>
 
@@ -1677,7 +1904,7 @@ Warm regards,
                 className="text-[11px] uppercase tracking-[0.28em] mb-2"
                 style={{ color: theme.accent }}
               >
-                Date
+                Date &amp; Time
               </p>
               <h3 className="font-editorial text-2xl sm:text-3xl text-white font-semibold mb-1.5">
                 Sunday, 27 December 2026
@@ -1686,7 +1913,7 @@ Warm regards,
                 className="text-xs uppercase tracking-[0.2em]"
                 style={{ color: theme.textMuted }}
               >
-                Timing to be announced
+                Evening · Exact timing to follow
               </p>
             </div>
 
@@ -1775,13 +2002,13 @@ Warm regards,
           >
             <div className="lg:col-span-5 space-y-5">
               <p className="text-xs uppercase tracking-[0.3em]" style={{ color: theme.accent }}>
-                Celebration Venue
+                The Celebration Awaits
               </p>
               <h2 className="font-editorial text-3xl md:text-4xl text-white font-semibold leading-tight">
-                Sitaram Rungta Municipal Town Hall
+                We&apos;ll See You There!
               </h2>
               <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
-                Barbil, District Keonjhar, Odisha
+                <strong className="text-white">Sitaram Rungta Municipal Town Hall</strong> · Barbil, District Keonjhar, Odisha — Your destination for an evening of festivities.
               </p>
 
               <div className="pt-2">
@@ -1828,13 +2055,13 @@ Warm regards,
               className="text-xs uppercase tracking-[0.34em] mb-2"
               style={{ color: theme.accent }}
             >
-              Warm Hospitality &amp; Assistance
+              Here to Help
             </p>
             <h2 className="font-editorial text-4xl md:text-5xl liquid-silver-text font-semibold">
-              Family Contacts
+              Need Any Assistance?
             </h2>
             <p className="text-sm mt-2" style={{ color: theme.textMuted }}>
-              For travel assistance, directions, or any queries, feel free to reach out to us directly.
+              For directions, travel help or any queries, we&apos;re just a call away.
             </p>
           </div>
 
@@ -1915,13 +2142,13 @@ Warm regards,
 
             <div className="md:col-span-7 text-center md:text-left space-y-5">
               <p className="text-xs uppercase tracking-[0.32em]" style={{ color: theme.accent }}>
-                Official Digital Keepsake
+                A Keepsake to Cherish
               </p>
               <h2 className="font-editorial text-3xl sm:text-5xl liquid-silver-text font-semibold leading-tight">
-                Invitation Card
+                Save &amp; Share the Invite
               </h2>
               <p className="text-sm leading-relaxed" style={{ color: theme.textMuted }}>
-                Download the invitation card to your phone or share it directly with family and friends on WhatsApp.
+                Download the official Silver Jubilee invitation card to your device or share it effortlessly with loved ones on WhatsApp.
               </p>
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3.5 pt-2">
@@ -1956,19 +2183,28 @@ Warm regards,
         <div className="max-w-2xl mx-auto">
           <IndianSilverJubileeCrest theme={theme} className="w-24 h-24 mx-auto mb-5 opacity-95" />
           <p
+            className="text-xs uppercase tracking-[0.3em] mb-1.5"
+            style={{ color: theme.accent }}
+          >
+            25 Years. Still Going Strong.
+          </p>
+          <p className="font-editorial text-3xl text-white font-semibold mb-4">
+            Ramu &amp; Beena
+          </p>
+          <p
             className="font-editorial italic text-2xl md:text-3xl leading-relaxed mb-6"
             style={{ color: theme.textBody }}
           >
-            “Your presence and blessings will make this Silver Jubilee milestone truly unforgettable.”
+            “Some occasions become unforgettable because of the people who celebrate them with us.”
           </p>
           <p
             className="text-xs uppercase tracking-[0.3em] mb-2"
             style={{ color: theme.accent }}
           >
-            Warmly Hosted By
+            With warm regards,
           </p>
           <p className="font-editorial text-3xl liquid-silver-text font-semibold">
-            Adarsh, Shradha &amp; the Agrawal Family
+            The Agrawal Family
           </p>
         </div>
       </footer>

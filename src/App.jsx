@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { ACTIVE_THEME_KEY, THEMES, applyThemeToDocument } from './theme.js';
 
-const CUSTOM_LOGO_SRC = 'public/logo.png'; // Set to null to keep the built-in crest
+const CUSTOM_LOGO_SRC = '/logo.png'; // Set to null to keep the built-in crest
 const SITE_URL = 'https://ramubeena-25th.vercel.app/';
 
 // ==========================================

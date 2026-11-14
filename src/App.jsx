@@ -1757,7 +1757,7 @@ With warm regards,
       </section>
 
       {/* BETTER POSITIONED FLOATING SOUND PROMPT (Bottom-Right Floating Badge) */}
-      {!userInteracted && !musicOn && (
+      {!showLogoReveal && !userInteracted && !musicOn && (
         <div className="fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] right-4 z-50 animate-bounce md:bottom-6 md:right-6">  <button
             onClick={toggleMusic}
             className="flex items-center gap-2 px-5 py-3 rounded-full border shadow-[0_10px_30px_rgba(0,0,0,0.85)] transition hover:scale-105 backdrop-blur-xl"

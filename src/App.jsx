@@ -1494,8 +1494,7 @@ With warm regards,
 
               {paletteDrawerOpen && (
                 <div
-                  className="absolute right-2 sm:right-auto sm:left-0 mt-2.5 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border p-3 shadow-2xl z-50 backdrop-blur-xl"
-                  style={{
+                  className="absolute left-0 -translate-x-4 sm:translate-x-0 sm:left-0 mt-2.5 w-[min(17rem,calc(100vw-2rem))] rounded-2xl border p-3 shadow-2xl z-50 backdrop-blur-xl"style={{
                     backgroundColor: theme.bgMid,
                     borderColor: `rgba(${theme.accentRgb}, 0.4)`,
                   }}
@@ -1759,8 +1758,7 @@ With warm regards,
 
       {/* BETTER POSITIONED FLOATING SOUND PROMPT (Bottom-Right Floating Badge) */}
       {!userInteracted && !musicOn && (
-        <div className="fixed bottom-6 right-6 z-40 animate-bounce">
-          <button
+        <div className="fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] right-4 z-50 animate-bounce md:bottom-6 md:right-6">  <button
             onClick={toggleMusic}
             className="flex items-center gap-2 px-5 py-3 rounded-full border shadow-[0_10px_30px_rgba(0,0,0,0.85)] transition hover:scale-105 backdrop-blur-xl"
             style={{

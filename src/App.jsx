@@ -18,32 +18,16 @@ import {
   Utensils,
   Users,
   Cake,
-  Palette
+  Palette,
+  Shirt,
+  FolderOpen
 } from 'lucide-react';
 import { ACTIVE_THEME_KEY, THEMES, applyThemeToDocument } from './theme.js';
 
 const CUSTOM_LOGO_SRC = '/logo.png'; // Set to null to keep the built-in crest
 const SITE_URL = 'https://ramubeena-25th.vercel.app/';
+const OUTFIT_DRIVE_URL = 'https://drive.google.com/drive/folders/1gqaVAqP86epAA3S1-1Ey9V5Yvcha1dOU?usp=sharing'; // Replace with your actual Google Drive link if desired
 
-// ==========================================
-// 1. AMBIENT ROYAL CELEBRATION SYNTHESIZER
-// ==========================================
-// ==========================================
-// 1. UNIVERSAL AUDIO PLAYER (AUTO-PAUSE ON TAB SWITCH / HOME)
-// ==========================================
-// ==========================================
-// 1. UNIVERSAL AUDIO PLAYER (AUTO-PLAY ON FIRST CLICK & AUTO-PAUSE)
-// ==========================================
-// ==========================================
-// 1. UNIVERSAL AUDIO PLAYER (AUTOPLAY & TAB-SWITCH AUTO-PAUSE)
-// ==========================================
-// ==========================================
-// 1. UNIVERSAL AUDIO PLAYER (SYNCED WITH REACT STATE)
-// ==========================================
-
-// ==========================================
-// 1. UNIVERSAL AUDIO PLAYER (BULLETPROOF AUTOPLAY & SYNC)
-// ==========================================
 // ==========================================
 // 1. UNIVERSAL AUDIO PLAYER (PAUSE ON TAB SWITCH, NO AUTO-RESUME)
 // ==========================================
@@ -59,13 +43,10 @@ class UniversalAudioPlayer {
     this.hasAutoStarted = false;
     this.onStateChange = onStateChange;
 
-    // 1. Instant unlock on any first user interaction anywhere on the document
-    // 1. Instant unlock and play on the very first scroll, touch, or click anywhere
     this.handleFirstInteraction = async () => {
       if (!this.hasAutoStarted && !this.userExplicitlyStopped) {
         try {
           this.audio.muted = false;
-          // Must call play() synchronously inside the user-initiated event
           await this.audio.play();
           this.hasAutoStarted = true;
           this.onStateChange?.(true);
@@ -78,7 +59,6 @@ class UniversalAudioPlayer {
 
     this.addInteractionListeners();
 
-    // 2. Pause when switching tabs, minimizing, or hitting home screen (NO auto-resume)
     this.handleVisibilityChange = () => {
       if (document.hidden && !this.audio.paused) {
         this.audio.pause();
@@ -96,18 +76,17 @@ class UniversalAudioPlayer {
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
     window.addEventListener('pagehide', this.handlePageHide);
 
-    // 3. Try immediate autoplay on page load/reload
     this.tryAutoplay();
   }
 
   addInteractionListeners() {
-    ['click', 'touchstart', 'keydown', 'scroll'].forEach((event) => {
+    ['click', 'touchstart', 'touchend', 'keydown'].forEach((event) => {
       document.addEventListener(event, this.handleFirstInteraction, { passive: true, once: true });
     });
   }
 
   removeInteractionListeners() {
-    ['click', 'touchstart', 'keydown', 'scroll'].forEach((event) => {
+    ['click', 'touchstart', 'touchend', 'keydown'].forEach((event) => {
       document.removeEventListener(event, this.handleFirstInteraction);
     });
   }
@@ -152,6 +131,7 @@ class UniversalAudioPlayer {
     this.audio.src = '';
   }
 }
+
 // ==========================================
 // 2. THEME-AWARE INDIAN ROYAL LOTUS & SILVER JUBILEE CREST
 // ==========================================
@@ -160,7 +140,7 @@ const IndianSilverJubileeCrest = ({ theme, className = 'w-32 h-32' }) => {
     return (
       <img
         src={CUSTOM_LOGO_SRC}
-        alt="Ramu & Beena Agrawal Silver Jubilee Crest"
+        alt="Beena & Ramu Agrawal Silver Jubilee Crest"
         className={`${className} object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.65)]`}
       />
     );
@@ -188,7 +168,6 @@ const IndianSilverJubileeCrest = ({ theme, className = 'w-32 h-32' }) => {
         </radialGradient>
       </defs>
 
-      {/* 16-Petal Sacred Lotus Aura */}
       {Array.from({ length: 16 }).map((_, idx) => {
         const angle = (idx * 360) / 16;
         return (
@@ -204,19 +183,16 @@ const IndianSilverJubileeCrest = ({ theme, className = 'w-32 h-32' }) => {
         );
       })}
 
-      {/* Concentric Filigree Rings */}
       <circle cx="130" cy="130" r="96" stroke="url(#royalSilver)" strokeWidth="1.2" strokeDasharray="3 4" opacity="0.85" />
       <circle cx="130" cy="130" r="88" stroke="url(#royalSilver)" strokeWidth="1.8" />
       <circle cx="130" cy="130" r="81" fill="url(#crestCore)" stroke="url(#warmGoldAccent)" strokeWidth="1" opacity="0.96" />
 
-      {/* Top Royal Lotus Crown Motif */}
       <path
         d="M114 66 Q130 46 146 66 Q137 63 130 70 Q123 63 114 66 Z"
         fill="url(#warmGoldAccent)"
       />
       <circle cx="130" cy="48" r="2.5" fill={theme.accent} />
 
-      {/* 25 Numeral */}
       <text
         x="130"
         y="124"
@@ -230,12 +206,10 @@ const IndianSilverJubileeCrest = ({ theme, className = 'w-32 h-32' }) => {
         25
       </text>
 
-      {/* Ornamental Lotus Divider */}
       <line x1="78" y1="136" x2="118" y2="136" stroke="url(#royalSilver)" strokeWidth="0.95" opacity="0.8" />
       <polygon points="130,132 134,136 130,140 126,136" fill="url(#warmGoldAccent)" />
       <line x1="142" y1="136" x2="182" y2="136" stroke="url(#royalSilver)" strokeWidth="0.95" opacity="0.8" />
 
-      {/* Monogram R & B */}
       <text
         x="130"
         y="165"
@@ -247,10 +221,9 @@ const IndianSilverJubileeCrest = ({ theme, className = 'w-32 h-32' }) => {
         fontWeight="600"
         letterSpacing="4"
       >
-        R &amp; B
+        B &amp; R
       </text>
 
-      {/* Subtitle */}
       <text
         x="130"
         y="188"
@@ -503,7 +476,7 @@ const TIMELINE_EVENTS = [
   },
   {
     step: '02',
-    title: "Ramu & Beena's Grand Entry",
+    title: "Beena & Ramu's Grand Entry",
     subtitle: 'Welcoming the Couple of the Hour · 25 Years Strong',
     timing: 'Timing to be announced',
     icon: Crown,
@@ -531,8 +504,8 @@ const TIMELINE_EVENTS = [
   },
   {
     step: '06',
-    title: 'Music & Celebration',
-    subtitle: 'An Enchanting Evening of Melodies, Laughter & Dance',
+    title: 'Live Concert & Celebration',
+    subtitle: 'Don\'t rush off after dinner! Stick around for a live musical showcase that will close out the night in style.',
     timing: 'Timing to be announced',
     icon: Music,
   },
@@ -635,13 +608,11 @@ const ConnectedEventTimeline = ({ theme }) => {
         </div>
 
         <div ref={containerRef} className="relative py-4">
-          {/* Base Track Spine */}
           <div
             className="absolute top-0 bottom-0 left-6 md:left-1/2 md:-translate-x-1/2 w-[2px] rounded-full"
             style={{ backgroundColor: `rgba(${theme.secondaryRgb}, 0.22)` }}
           />
 
-          {/* Progressive Illuminated Beam */}
           <div
             className="absolute top-0 left-6 md:left-1/2 md:-translate-x-1/2 w-[2px] rounded-full transition-all duration-150 ease-out"
             style={{
@@ -664,7 +635,6 @@ const ConnectedEventTimeline = ({ theme }) => {
                   data-timeline-idx={index}
                   className="relative flex items-center md:justify-between"
                 >
-                  {/* Milestone Node */}
                   <div
                     className={`absolute left-6 md:left-1/2 -translate-x-1/2 z-20 flex items-center justify-center w-11 h-11 rounded-full transition-all duration-700 ${
                       isLit ? 'scale-110' : 'scale-95'
@@ -686,7 +656,6 @@ const ConnectedEventTimeline = ({ theme }) => {
                     <Icon className="w-4 h-4" />
                   </div>
 
-                  {/* Desktop Left Card */}
                   <div className="hidden md:block md:w-[44%]">
                     {!isEven && (
                       <div
@@ -735,7 +704,6 @@ const ConnectedEventTimeline = ({ theme }) => {
                     )}
                   </div>
 
-                  {/* Mobile Card + Desktop Right Card */}
                   <div
                     className={`w-full pl-16 md:pl-0 md:w-[44%] ${
                       !isEven ? 'md:invisible md:pointer-events-none' : ''
@@ -805,7 +773,6 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
   canvas.width = W;
   canvas.height = H;
 
-  // Helper: Rounded rectangle path
   const roundRectPath = (x, y, w, h, r) => {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -820,7 +787,6 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
     ctx.closePath();
   };
 
-  // Helper: Draw 4-point star sparkle
   const drawSparkle = (cx, cy, size, color) => {
     ctx.fillStyle = color;
     ctx.beginPath();
@@ -836,7 +802,6 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
     ctx.fill();
   };
 
-  // 1. Rich Multi-Layered Royal Velvet Background
   const bgGrad = ctx.createRadialGradient(W / 2, H * 0.26, 40, W / 2, H * 0.5, H * 0.88);
   bgGrad.addColorStop(0, theme.bgTop);
   bgGrad.addColorStop(0.45, theme.bgMid);
@@ -844,21 +809,19 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // Warm Ambient Halo behind Crest & Couple Names
-  const crestGlow = ctx.createRadialGradient(W / 2, 430, 10, W / 2, 430, 420);
+  const crestGlow = ctx.createRadialGradient(W / 2, 380, 10, W / 2, 380, 420);
   crestGlow.addColorStop(0, `rgba(${theme.accentRgb}, 0.22)`);
   crestGlow.addColorStop(0.55, `rgba(${theme.secondaryRgb}, 0.09)`);
   crestGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = crestGlow;
   ctx.fillRect(0, 0, W, H);
 
-  const nameGlow = ctx.createRadialGradient(W / 2, 920, 20, W / 2, 920, 460);
+  const nameGlow = ctx.createRadialGradient(W / 2, 880, 20, W / 2, 880, 460);
   nameGlow.addColorStop(0, `rgba(${theme.secondaryRgb}, 0.14)`);
   nameGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = nameGlow;
   ctx.fillRect(0, 450, W, 900);
 
-  // 2. Delicate Indian Jaali Lattice Texture
   ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.04)`;
   ctx.lineWidth = 1;
   for (let offset = -H; offset < W + H; offset += 54) {
@@ -873,9 +836,8 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
     ctx.stroke();
   }
 
-  // 3. Intricate Double-Layer Sacred Lotus Mandala behind Crest
   ctx.save();
-  ctx.translate(W / 2, 435);
+  ctx.translate(W / 2, 385);
   for (let i = 0; i < 24; i++) {
     ctx.rotate((Math.PI * 2) / 24);
     ctx.strokeStyle = `rgba(${theme.secondaryRgb}, 0.24)`;
@@ -896,7 +858,6 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
   }
   ctx.restore();
 
-  // 4. Shimmering Starlight & Bokek Motes
   for (let i = 0; i < 95; i++) {
     const sx = ((i * 197 + 61) % (W - 110)) + 55;
     const sy = ((i * 313 + 89) % (H - 110)) + 55;
@@ -918,7 +879,6 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
     }
   }
 
-  // 5. Metallic Champagne-Silver-Sapphire Gradient
   const royalMetalGrad = ctx.createLinearGradient(120, 80, W - 120, H - 80);
   royalMetalGrad.addColorStop(0, theme.silverMuted);
   royalMetalGrad.addColorStop(0.25, '#FFFFFF');
@@ -926,7 +886,6 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
   royalMetalGrad.addColorStop(0.78, theme.secondary);
   royalMetalGrad.addColorStop(1, '#CBD5E1');
 
-  // Outer Double Royal Frame
   ctx.strokeStyle = royalMetalGrad;
   ctx.lineWidth = 4;
   ctx.strokeRect(42, 42, W - 84, H - 84);
@@ -935,23 +894,21 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
   ctx.lineWidth = 1.2;
   ctx.strokeRect(54, 54, W - 108, H - 108);
 
-  // Sculpted Mughal Jharokha Arch Frame
   ctx.save();
   ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.72)`;
   ctx.lineWidth = 2.4;
   ctx.beginPath();
   ctx.moveTo(74, H - 74);
-  ctx.lineTo(74, 345);
-  ctx.quadraticCurveTo(74, 165, 255, 142);
-  ctx.quadraticCurveTo(405, 124, W / 2, 76);
-  ctx.quadraticCurveTo(W - 405, 124, W - 255, 142);
-  ctx.quadraticCurveTo(W - 74, 165, W - 74, 345);
+  ctx.lineTo(74, 305);
+  ctx.quadraticCurveTo(74, 145, 255, 122);
+  ctx.quadraticCurveTo(405, 104, W / 2, 66);
+  ctx.quadraticCurveTo(W - 405, 104, W - 255, 122);
+  ctx.quadraticCurveTo(W - 74, 145, W - 74, 305);
   ctx.lineTo(W - 74, H - 74);
   ctx.closePath();
   ctx.stroke();
   ctx.restore();
 
-  // Bottom Corner Lotus Rosette Ornaments
   [
     [118, H - 118],
     [W - 118, H - 118],
@@ -964,21 +921,7 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
     drawSparkle(cx, cy, 11, `rgba(${theme.accentRgb}, 0.7)`);
   });
 
-  // 6. Top Blessing Pill Banner
-  ctx.textAlign = 'center';
-  roundRectPath(W / 2 - 370, 210, 740, 46, 23);
-  ctx.fillStyle = theme.surfaceDeep;
-  ctx.fill();
-  ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.42)`;
-  ctx.lineWidth = 1.4;
-  ctx.stroke();
-
-  ctx.fillStyle = theme.accent;
-  ctx.font = '600 18px Montserrat, sans-serif';
-  ctx.fillText('WITH THE GRACE OF THE ALMIGHTY & BLESSINGS OF OUR ELDERS', W / 2, 239);
-
-  // 7. Royal Silver Jubilee Crest Medallion
-  const crestY = 435;
+  const crestY = 385;
   const medallionGrad = ctx.createRadialGradient(W / 2, crestY - 40, 20, W / 2, crestY, 162);
   medallionGrad.addColorStop(0, theme.bgTop);
   medallionGrad.addColorStop(1, theme.surfaceDeep);
@@ -1018,7 +961,6 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
       img.src = CUSTOM_LOGO_SRC;
     });
   } else {
-    // Royal Lotus Crown above 25
     ctx.fillStyle = theme.accent;
     ctx.beginPath();
     ctx.moveTo(W / 2, crestY - 126);
@@ -1030,7 +972,6 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
     ctx.font = '700 126px "Cormorant Garamond", Georgia, serif';
     ctx.fillText('25', W / 2, crestY + 18);
 
-    // Fine Line & Diamond inside Crest
     ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.55)`;
     ctx.lineWidth = 1.2;
     ctx.beginPath();
@@ -1042,50 +983,46 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
     drawSparkle(W / 2, crestY + 38, 7, theme.accent);
 
     ctx.font = 'italic 600 42px "Cormorant Garamond", Georgia, serif';
-    ctx.fillText('R & B', W / 2, crestY + 92);
+    ctx.fillText('B & R', W / 2, crestY + 92);
   }
 
-  // 8. Invitation Title, Couple Names & Poetic Verse
+  ctx.textAlign = 'center';
   ctx.fillStyle = theme.textMuted;
   ctx.font = '500 21px Montserrat, sans-serif';
-  ctx.fillText('HONORING TWENTY-FIVE GOLDEN YEARS OF', W / 2, 682);
+  ctx.fillText('HONORING TWENTY-FIVE GOLDEN YEARS OF', W / 2, 642);
 
   ctx.fillStyle = theme.accent;
   ctx.font = '700 46px "Cormorant Garamond", Georgia, serif';
-  ctx.fillText('25TH SILVER JUBILEE CELEBRATION', W / 2, 745);
+  ctx.fillText('25TH SILVER JUBILEE CELEBRATION', W / 2, 705);
 
-  // Ornamental Diamond Divider
   ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.62)`;
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.moveTo(210, 786);
-  ctx.lineTo(W / 2 - 24, 786);
-  ctx.moveTo(W / 2 + 24, 786);
-  ctx.lineTo(W - 210, 786);
+  ctx.moveTo(210, 746);
+  ctx.lineTo(W / 2 - 24, 746);
+  ctx.moveTo(W / 2 + 24, 746);
+  ctx.lineTo(W - 210, 746);
   ctx.stroke();
-  drawSparkle(W / 2, 786, 11, theme.accent);
+  drawSparkle(W / 2, 746, 11, theme.accent);
 
-  // Couple Names
   ctx.fillStyle = '#FFFFFF';
   ctx.font = '700 104px "Cormorant Garamond", Georgia, serif';
-  ctx.fillText('Ramu & Beena', W / 2, 902);
+  ctx.fillText('Beena & Ramu', W / 2, 862);
 
   ctx.font = 'italic 600 78px "Cormorant Garamond", Georgia, serif';
   ctx.fillStyle = royalMetalGrad;
-  ctx.fillText('Agrawal', W / 2, 984);
+  ctx.fillText('Agrawal', W / 2, 944);
 
-  // Poetic Invitation Line
   ctx.fillStyle = theme.textBody;
   ctx.font = 'italic 500 29px "Cormorant Garamond", Georgia, serif';
   ctx.fillText(
     '“Join us for an evening of blessings, music, and joyous togetherness”',
     W / 2,
-    1046
+    1006
   );
 
-  // 9. Rounded Frosted Royal Details Card
   const cardX = 116;
-  const cardY = 1094;
+  const cardY = 1054;
   const cardW = W - 232;
   const cardH = 472;
 
@@ -1096,7 +1033,6 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // Inner subtle border inside card
   roundRectPath(cardX + 12, cardY + 12, cardW - 24, cardH - 24, 24);
   ctx.strokeStyle = `rgba(${theme.secondaryRgb}, 0.22)`;
   ctx.lineWidth = 1;
@@ -1114,7 +1050,6 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
   ctx.font = '400 24px Montserrat, sans-serif';
   ctx.fillText('Evening · Exact timing to follow', W / 2, cardY + 176);
 
-  // Card Center Divider with Star
   ctx.strokeStyle = `rgba(${theme.accentRgb}, 0.35)`;
   ctx.lineWidth = 1.2;
   ctx.beginPath();
@@ -1137,18 +1072,17 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
   ctx.font = '400 25px Montserrat, sans-serif';
   ctx.fillText('Barbil, District Keonjhar, Odisha', W / 2, cardY + 384);
 
-  // 10. Clean Host & RSVP Footer (No Website URL on Card Image)
   ctx.fillStyle = theme.textMuted;
   ctx.font = '500 21px Montserrat, sans-serif';
-  ctx.fillText('WITH WARM REGARDS,', W / 2, 1654);
+  ctx.fillText('WITH WARM REGARDS,', W / 2, 1624);
 
   ctx.fillStyle = royalMetalGrad;
   ctx.font = 'italic 700 54px "Cormorant Garamond", Georgia, serif';
-  ctx.fillText('The Agrawal Family', W / 2, 1720);
+  ctx.fillText('The Agrawal Family', W / 2, 1690);
 
   ctx.fillStyle = theme.secondary;
   ctx.font = '500 21px Montserrat, sans-serif';
-  ctx.fillText('RSVP: +91 78548 79210   ·   +91 79785 37640', W / 2, 1782);
+  ctx.fillText('RSVP: +91 78548 79210   ·   +91 79785 37640', W / 2, 1752);
 
   return canvas.toDataURL('image/png');
 };
@@ -1160,16 +1094,14 @@ const WhatsAppInviteModal = ({ isOpen, onClose, theme }) => {
 
   const shareMessage = `✨ *25th Silver Jubilee Invitation* ✨
 
-With the Grace of the Almighty & Blessings of Our Elders, we warmly invite you and your family to celebrate 25 golden years of
-*Ramu & Beena Agrawal*
+With the Grace of the Almighty & Blessings of Our Elders, we warmly invite you and your family to celebrate 25 golden years of *Beena & Ramu Agrawal*.
 
 📅 *Date:* Sunday, 27 December 2026
 📍 *Venue:* Sitaram Rungta Municipal Town Hall, Barbil, Odisha
-
-🌐 *Digital Invitation:* ${SITE_URL}
+🌐 *Invitation:* ${SITE_URL}
 
 With warm regards,
-*The Agrawal Family* 🙏✨`;
+*The Agrawal Family* 🙏`;
 
   useEffect(() => {
     if (!isOpen || !canvasRef.current) return;
@@ -1181,7 +1113,7 @@ With warm regards,
   const handleDownload = () => {
     if (!imageUrl) return;
     const link = document.createElement('a');
-    link.download = 'Ramu-Beena-25th-Silver-Jubilee-Invite.png';
+    link.download = 'Beena-Ramu-25th-Silver-Jubilee-Invite.png';
     link.href = imageUrl;
     link.click();
   };
@@ -1197,20 +1129,19 @@ With warm regards,
       try {
         const res = await fetch(imageUrl);
         const blob = await res.blob();
-        const file = new File([blob], 'Ramu-Beena-Silver-Jubilee-Invite.png', {
+        const file = new File([blob], 'Beena-Ramu-Silver-Jubilee-Invite.png', {
           type: 'image/png',
         });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: 'Ramu & Beena Agrawal - 25th Silver Jubilee',
+            title: 'Beena & Ramu Agrawal - 25th Silver Jubilee',
             text: shareMessage,
-            url: SITE_URL,
           });
           return;
         }
       } catch {
-        // Fallback to wa.me link below
+        // Fallback to wa.me link
       }
     }
     const encoded = encodeURIComponent(shareMessage);
@@ -1254,7 +1185,7 @@ With warm regards,
             {imageUrl && (
               <img
                 src={imageUrl}
-                alt="Ramu and Beena Agrawal 25th Silver Jubilee Invitation"
+                alt="Beena and Ramu Agrawal 25th Silver Jubilee Invitation"
                 className="w-60 sm:w-64 rounded-2xl border shadow-[0_20px_50px_rgba(0,0,0,0.9)]"
                 style={{ borderColor: `rgba(${theme.accentRgb}, 0.45)` }}
               />
@@ -1347,7 +1278,6 @@ export default function App() {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
-  // Apply CSS custom properties whenever theme changes
   useEffect(() => {
     applyThemeToDocument(theme);
     if (inlineCanvasRef.current) {
@@ -1356,21 +1286,20 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-  const player = new UniversalAudioPlayer((isPlaying) => {
-    setMusicOn(isPlaying);
-  });
+    const player = new UniversalAudioPlayer((isPlaying) => {
+      setMusicOn(isPlaying);
+    });
 
-  synthRef.current = player;
+    synthRef.current = player;
 
-  return () => {
-    player.destroy();
-    if (synthRef.current === player) {
-      synthRef.current = null;
-    }
-  };
-}, []);
+    return () => {
+      player.destroy();
+      if (synthRef.current === player) {
+        synthRef.current = null;
+      }
+    };
+  }, []);
 
-  // Days-only countdown to Sunday, 27 December 2026
   useEffect(() => {
     const targetDate = new Date('2026-12-27T00:00:00+05:30').getTime();
 
@@ -1386,20 +1315,20 @@ export default function App() {
   }, []);
 
   const toggleMusic = async () => {
-  if (!synthRef.current) return;
+    if (!synthRef.current) return;
 
-  if (musicOn) {
-    synthRef.current.stop();
-    setMusicOn(false);
-  } else {
-    await synthRef.current.unmute();
-  }
-};
+    if (musicOn) {
+      synthRef.current.stop();
+      setMusicOn(false);
+    } else {
+      await synthRef.current.unmute();
+    }
+  };
 
   const handleInlineDownload = () => {
     if (!inlineCardUrl) return;
     const link = document.createElement('a');
-    link.download = 'Ramu-Beena-25th-Silver-Jubilee-Invite.png';
+    link.download = 'Beena-Ramu-25th-Silver-Jubilee-Invite.png';
     link.href = inlineCardUrl;
     link.click();
   };
@@ -1407,7 +1336,7 @@ export default function App() {
   const handleInlineShare = async () => {
     const shareText = `✨ *25th Silver Jubilee Invitation* ✨
 
-With the Grace of the Almighty & Blessings of Our Elders, we warmly invite you and your family to celebrate 25 golden years of *Ramu & Beena Agrawal*.
+With the Grace of the Almighty & Blessings of Our Elders, we warmly invite you and your family to celebrate 25 golden years of *Beena & Ramu Agrawal*.
 
 📅 *Date:* Sunday, 27 December 2026
 📍 *Venue:* Sitaram Rungta Municipal Town Hall, Barbil, Odisha
@@ -1420,20 +1349,19 @@ With warm regards,
       try {
         const res = await fetch(inlineCardUrl);
         const blob = await res.blob();
-        const file = new File([blob], 'Ramu-Beena-Silver-Jubilee-Invite.png', {
+        const file = new File([blob], 'Beena-Ramu-Silver-Jubilee-Invite.png', {
           type: 'image/png',
         });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: 'Ramu & Beena Agrawal - 25th Silver Jubilee',
+            title: 'Beena & Ramu Agrawal - 25th Silver Jubilee',
             text: shareText,
-            url: SITE_URL,
           });
           return;
         }
       } catch {
-        // Fallback to WhatsApp link
+        // Fallback
       }
     }
     window.open(
@@ -1462,15 +1390,9 @@ With warm regards,
 
   return (
     <div className="min-h-screen royal-themed-bg text-slate-100 relative overflow-x-hidden transition-colors duration-500">
-      {/* Hidden Canvas for Inline Invitation Card */}
       <canvas ref={inlineCanvasRef} className="hidden" />
-
-      {/* Theme-Aware Interactive Sparkle Canvas */}
       <RoyalCelebrationBackground theme={theme} />
 
-      {/* ==========================================
-          MAGICAL 1.3s SHOCKWAVE CREST LANDING EFFECT
-         ========================================== */}
       {showLogoReveal && (
         <div
           onClick={() => setShowLogoReveal(false)}
@@ -1502,7 +1424,7 @@ With warm regards,
               className="text-xs uppercase tracking-[0.38em]"
               style={{ color: theme.accent }}
             >
-              Ramu &amp; Beena Agrawal
+              Beena &amp; Ramu Agrawal
             </p>
             <p
               className="font-editorial italic text-xl mt-1"
@@ -1514,9 +1436,7 @@ With warm regards,
         </div>
       )}
 
-      {/* ==========================================
-          STICKY LUXURY NAVIGATION HEADER
-         ========================================== */}
+      {/* HEADER */}
       <header
         className="sticky top-0 z-30 backdrop-blur-xl border-b transition-colors duration-500"
         style={{
@@ -1527,7 +1447,7 @@ With warm regards,
         <div className="max-w-6xl mx-auto px-5 py-3.5 flex items-center justify-between">
           <a href="#" className="flex items-center gap-2.5">
             <span className="font-editorial text-xl md:text-2xl font-bold liquid-silver-text tracking-wider">
-              R &amp; B · XXV
+              B &amp; R 
             </span>
           </a>
 
@@ -1538,12 +1458,12 @@ With warm regards,
             <a href="#glance" className="hover:text-white transition">At a Glance</a>
             <a href="#timeline" className="hover:text-white transition">Events</a>
             <a href="#venue" className="hover:text-white transition">Venue</a>
+            <a href="#attire" className="hover:text-white transition">Attire</a>
             <a href="#contacts" className="hover:text-white transition">Family Contacts</a>
             <a href="#invitation-card" className="hover:text-white transition">Invite Card</a>
           </nav>
 
           <div className="flex items-center gap-2">
-            {/* Quick Theme Switcher Button for Live Previewing */}
             <div className="relative">
               <button
                 onClick={() => setPaletteDrawerOpen((v) => !v)}
@@ -1561,7 +1481,7 @@ With warm regards,
 
               {paletteDrawerOpen && (
                 <div
-                  className="absolute right-0 mt-2.5 w-72 rounded-2xl border p-3 shadow-2xl z-50 backdrop-blur-xl"
+                  className="absolute right-0 sm:right-auto sm:left-0 mt-2.5 w-72 max-w-[90vw] rounded-2xl border p-3 shadow-2xl z-50 backdrop-blur-xl"
                   style={{
                     backgroundColor: theme.bgMid,
                     borderColor: `rgba(${theme.accentRgb}, 0.4)`,
@@ -1647,43 +1567,8 @@ With warm regards,
         </div>
       </header>
 
-      {/* ==========================================
-          MAIN ROYAL INDIAN HERO + SURROUNDING ORNAMENTS + DAYS COUNTDOWN
-         ========================================== */}
+      {/* HERO SECTION */}
       <section className="relative z-10 pt-10 pb-24 md:pt-14 md:pb-28 px-4 sm:px-6 overflow-hidden">
-        {/* Top Sacred Garland / Toran Divider */}
-        <div className="max-w-5xl mx-auto mb-8 flex items-center justify-center gap-4 opacity-95">
-          <div
-            className="h-px flex-1"
-            style={{
-              background: `linear-gradient(90deg, transparent, rgba(${theme.secondaryRgb}, 0.5), rgba(${theme.accentRgb}, 0.75))`,
-            }}
-          />
-          <div
-            className="flex items-center gap-2.5 px-5 py-1.5 rounded-full border"
-            style={{
-              borderColor: `rgba(${theme.accentRgb}, 0.35)`,
-              backgroundColor: theme.surfaceDeep,
-            }}
-          >
-            <Sparkles className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-            <span
-              className="text-[10px] sm:text-[11px] uppercase tracking-[0.34em]"
-              style={{ color: theme.accent }}
-            >
-              With the Grace of the Almighty &amp; Blessings of Our Elders
-            </span>
-            <Sparkles className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-          </div>
-          <div
-            className="h-px flex-1"
-            style={{
-              background: `linear-gradient(270deg, transparent, rgba(${theme.secondaryRgb}, 0.5), rgba(${theme.accentRgb}, 0.75))`,
-            }}
-          />
-        </div>
-
-        {/* Left & Right Flanking Mandalas */}
         <SacredLotusMandala
           theme={theme}
           className="pointer-events-none hidden lg:block absolute -left-44 top-1/2 w-[520px] h-[520px] opacity-70 animate-mandala-slow"
@@ -1692,26 +1577,21 @@ With warm regards,
           theme={theme}
           className="pointer-events-none hidden lg:block absolute -right-44 top-1/2 w-[520px] h-[520px] opacity-70 animate-mandala-reverse"
         />
-
-        {/* Center Hero Sacred Mandala Halo */}
         <SacredLotusMandala
           theme={theme}
           className="pointer-events-none absolute left-1/2 top-[38%] w-[560px] h-[560px] md:w-[860px] md:h-[860px] opacity-90 animate-mandala-slow"
         />
 
         <div className="max-w-4xl mx-auto relative animate-hero-rise">
-          {/* Scalloped Royal Jharokha Arch Frame */}
           <div
             className="relative rounded-t-[160px] sm:rounded-t-[230px] rounded-b-[2.25rem] royal-themed-card border px-6 pt-14 pb-12 sm:px-14 sm:pt-16 sm:pb-14 text-center backdrop-blur-xl"
             style={{ borderColor: `rgba(${theme.accentRgb}, 0.38)` }}
           >
-            {/* Inner Double Filigree Arch */}
             <div
               className="pointer-events-none absolute inset-3 rounded-t-[150px] sm:rounded-t-[220px] rounded-b-[1.75rem] border"
               style={{ borderColor: `rgba(${theme.secondaryRgb}, 0.22)` }}
             />
 
-            {/* Bottom Corner Lotus Filigrees */}
             <RoyalCornerFiligree
               theme={theme}
               className="pointer-events-none absolute bottom-3 left-3 w-20 h-20 sm:w-28 sm:h-28 -rotate-90 opacity-90"
@@ -1741,13 +1621,12 @@ With warm regards,
             </p>
 
             <h1 className="font-editorial text-5xl sm:text-7xl md:text-[5.25rem] font-bold liquid-silver-text tracking-tight leading-[1.04]">
-              Ramu &amp; Beena
+              Beena &amp; Ramu
               <span className="block italic font-semibold text-4xl sm:text-6xl md:text-7xl mt-1 text-white">
                 Agrawal
               </span>
             </h1>
 
-            {/* Ornamental Lotus Divider */}
             <div className="flex items-center justify-center gap-4 my-7 max-w-md mx-auto">
               <div
                 className="h-px flex-1"
@@ -1774,10 +1653,9 @@ With warm regards,
               className="font-editorial italic text-xl sm:text-2xl max-w-2xl mx-auto leading-relaxed mb-8"
               style={{ color: theme.textBody }}
             >
-              “Twenty-five years of shared dreams, quiet strength, and unwavering love—join us as we celebrate the Silver Jubilee of Ramu &amp; Beena Agrawal with an evening of joy, blessings, and togetherness.”
+              “Twenty-five years of shared dreams, quiet strength, and unwavering love—join us as we celebrate the Silver Jubilee of Beena &amp; Ramu Agrawal with an evening of joy, blessings, and togetherness.”
             </p>
 
-            {/* Celebration Date Pill */}
             <div
               className="inline-flex flex-wrap items-center justify-center gap-3 sm:gap-5 px-6 py-3.5 rounded-full border mb-9"
               style={{
@@ -1804,7 +1682,6 @@ With warm regards,
               </span>
             </div>
 
-            {/* Days-Only Countdown Medallion */}
             <div className="max-w-sm mx-auto mb-10">
               <div
                 className="relative py-5 px-8 rounded-3xl border shadow-[0_15px_40px_rgba(0,0,0,0.85)] animate-diya-glow"
@@ -1837,7 +1714,6 @@ With warm regards,
               </div>
             </div>
 
-            {/* Primary Action CTAs */}
             <div className="relative z-10 flex flex-wrap items-center justify-center gap-4">
               <a
                 href="https://ramubeenasilverjubilee.vercel.app/"
@@ -1866,9 +1742,6 @@ With warm regards,
         </div>
       </section>
 
-      {/* ==========================================
-          THE EVENING AT A GLANCE
-         ========================================== */}
       <section
         id="glance"
         className="relative z-10 py-20 px-5 border-t"
@@ -1946,7 +1819,7 @@ With warm regards,
                 className="text-xs uppercase tracking-[0.2em]"
                 style={{ color: theme.textMuted }}
               >
-                Ramu &amp; Beena Agrawal
+                Beena &amp; Ramu Agrawal
               </p>
             </div>
 
@@ -1984,14 +1857,8 @@ With warm regards,
         </div>
       </section>
 
-      {/* ==========================================
-          CONNECTED VERTICAL EVENT TIMELINE
-         ========================================== */}
       <ConnectedEventTimeline theme={theme} />
 
-      {/* ==========================================
-          VENUE SECTION WITH GOOGLE MAPS & DIRECTIONS
-         ========================================== */}
       <section
         id="venue"
         className="relative z-10 py-20 px-5 border-t"
@@ -2043,9 +1910,88 @@ With warm regards,
         </div>
       </section>
 
-      {/* ==========================================
-          FAMILY CONTACTS SECTION
-         ========================================== */}
+      {/* DRESS CODE / ATTIRE GUIDE SECTION WITH DRIVE LINK BUTTON */}
+      <section
+        id="attire"
+        className="relative z-10 py-20 px-5 border-t"
+        style={{ borderColor: `rgba(${theme.secondaryRgb}, 0.16)` }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <div
+            className="royal-themed-card border rounded-3xl p-8 md:p-12 text-center"
+            style={{ borderColor: `rgba(${theme.accentRgb}, 0.35)` }}
+          >
+            <div
+              className="w-12 h-12 mx-auto mb-5 rounded-full border flex items-center justify-center"
+              style={{
+                backgroundColor: theme.surfaceDeep,
+                borderColor: `rgba(${theme.accentRgb}, 0.38)`,
+                color: theme.accent,
+              }}
+            >
+              <Shirt className="w-5 h-5" />
+            </div>
+            <p
+              className="text-xs uppercase tracking-[0.34em] mb-2"
+              style={{ color: theme.accent }}
+            >
+              A Gentle Note
+            </p>
+            <h2 className="font-editorial text-3xl md:text-4xl liquid-silver-text font-semibold mb-6">
+              What to Wear?
+            </h2>
+            <p
+              className="text-sm md:text-base leading-relaxed max-w-2xl mx-auto mb-8"
+              style={{ color: theme.textBody }}
+            >
+              Our greatest wish is simply to celebrate this milestone surrounded by your love and company. There are no strict rules or dress codes here—please wear whatever makes you feel comfortable, joyous, and ready to celebrate!
+            </p>
+
+            <div
+              className="p-6 rounded-2xl border text-left max-w-2xl mx-auto space-y-4 mb-8"
+              style={{
+                backgroundColor: theme.surfaceDeep,
+                borderColor: `rgba(${theme.secondaryRgb}, 0.28)`,
+              }}
+            >
+              <p
+                className="text-xs uppercase tracking-[0.24em] font-semibold"
+                style={{ color: theme.accent }}
+              >
+                For those looking for festive inspiration:
+              </p>
+              <ul className="space-y-3 text-xs md:text-sm" style={{ color: theme.textMuted }}>
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.accent }} />
+                  <span><strong className="text-white">Traditional &amp; Festive:</strong> Elegant sarees, lehengas, or traditional kurtas/sherwanis.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.accent }} />
+                  <span><strong className="text-white">Indo-Western &amp; Formal:</strong> Stylish fusion wear, cocktail dresses, or smart suits/blazers.</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <span className="mt-1 w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.accent }} />
+                  <span><strong className="text-white">Above all:</strong> Come as you are, ready to share smiles, good food, and wonderful memories with us!</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex justify-center">
+              <a
+                href={OUTFIT_DRIVE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="theme-btn-primary inline-flex items-center gap-2.5 px-8 py-3.5 rounded-full font-semibold text-xs uppercase tracking-wider hover:opacity-95 transition shadow-lg"
+              >
+                <FolderOpen className="w-4 h-4" />
+                <span>View Outfit Inspiration (Google Drive)</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section
         id="contacts"
         className="relative z-10 py-20 px-5 border-t"
@@ -2118,9 +2064,6 @@ With warm regards,
         </div>
       </section>
 
-      {/* ==========================================
-          DEDICATED INVITATION IMAGE DOWNLOAD & SHARE SECTION
-         ========================================== */}
       <section
         id="invitation-card"
         className="relative z-10 py-20 px-5 border-t"
@@ -2135,7 +2078,7 @@ With warm regards,
               {inlineCardUrl && (
                 <img
                   src={inlineCardUrl}
-                  alt="Ramu & Beena Agrawal Silver Jubilee Invitation Card"
+                  alt="Beena & Ramu Agrawal Silver Jubilee Invitation Card"
                   className="w-60 sm:w-64 rounded-2xl border shadow-[0_20px_50px_rgba(0,0,0,0.9)]"
                   style={{ borderColor: `rgba(${theme.accentRgb}, 0.45)` }}
                 />
@@ -2175,9 +2118,6 @@ With warm regards,
         </div>
       </section>
 
-      {/* ==========================================
-          ROYAL CLOSING FOOTER
-         ========================================== */}
       <footer
         className="relative z-10 pt-20 pb-28 md:pb-20 px-5 border-t text-center"
         style={{ borderColor: `rgba(${theme.secondaryRgb}, 0.16)` }}
@@ -2191,7 +2131,7 @@ With warm regards,
             25 Years. Still Going Strong.
           </p>
           <p className="font-editorial text-3xl text-white font-semibold mb-4">
-            Ramu &amp; Beena
+            Beena &amp; Ramu
           </p>
           <p
             className="font-editorial italic text-2xl md:text-3xl leading-relaxed mb-6"
@@ -2211,9 +2151,6 @@ With warm regards,
         </div>
       </footer>
 
-      {/* ==========================================
-          MOBILE FLOATING CONCIERGE BAR
-         ========================================== */}
       <div className="fixed bottom-4 inset-x-4 z-40 md:hidden">
         <div
           className="max-w-md mx-auto flex items-center justify-around py-2.5 px-3 rounded-full border backdrop-blur-xl shadow-[0_15px_40px_rgba(0,0,0,0.95)]"
@@ -2250,7 +2187,6 @@ With warm regards,
         </div>
       </div>
 
-      {/* WhatsApp Invitation Modal */}
       <WhatsAppInviteModal
         isOpen={inviteModalOpen}
         onClose={() => setInviteModalOpen(false)}

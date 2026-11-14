@@ -20,7 +20,8 @@ import {
   Cake,
   Palette,
   Shirt,
-  FolderOpen
+  FolderOpen,
+  Music2
 } from 'lucide-react';
 import { ACTIVE_THEME_KEY, THEMES, applyThemeToDocument } from './theme.js';
 
@@ -29,7 +30,7 @@ const SITE_URL = 'https://ramubeena-25th.vercel.app/';
 const OUTFIT_DRIVE_URL = 'https://drive.google.com/drive/folders/1gqaVAqP86epAA3S1-1Ey9V5Yvcha1dOU?usp=sharing'; // Replace with your actual Google Drive link if desired
 
 // ==========================================
-// 1. UNIVERSAL AUDIO PLAYER (PAUSE ON TAB SWITCH, NO AUTO-RESUME)
+// 1. UNIVERSAL AUDIO PLAYER (SMART STATE TRACKING)
 // ==========================================
 class UniversalAudioPlayer {
   constructor(onStateChange) {
@@ -59,17 +60,24 @@ class UniversalAudioPlayer {
 
     this.addInteractionListeners();
 
+    // Smart visibility handler: pause audio when hidden, but don't force-reset the banner if user wanted it playing
     this.handleVisibilityChange = () => {
-      if (document.hidden && !this.audio.paused) {
-        this.audio.pause();
-        this.onStateChange?.(false);
+      if (document.hidden) {
+        if (!this.audio.paused) {
+          this.audio.pause();
+          // We keep musicOn state as true so the prompt doesn't re-appear when returning
+        }
+      } else {
+        // Optional: auto-resume when coming back if it was playing before
+        if (this.hasAutoStarted && !this.userExplicitlyStopped) {
+          this.audio.play().catch(() => {});
+        }
       }
     };
 
     this.handlePageHide = () => {
       if (!this.audio.paused) {
         this.audio.pause();
-        this.onStateChange?.(false);
       }
     };
 
@@ -1082,7 +1090,7 @@ const renderRoyalInvitationCanvas = async (canvas, theme) => {
 
   ctx.fillStyle = theme.secondary;
   ctx.font = '500 21px Montserrat, sans-serif';
-  ctx.fillText('RSVP: +91 78548 79210   ·   +91 79785 37640', W / 2, 1752);
+  ctx.fillText('RSVP: +91 78548 79210    ·    +91 79785 37640', W / 2, 1752);
 
   return canvas.toDataURL('image/png');
 };
@@ -1253,6 +1261,7 @@ export default function App() {
 
   const [showLogoReveal, setShowLogoReveal] = useState(true);
   const [musicOn, setMusicOn] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false); // Tracks if user clicked play at least once
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [daysLeft, setDaysLeft] = useState(0);
   const [inlineCardUrl, setInlineCardUrl] = useState('');
@@ -1288,6 +1297,7 @@ export default function App() {
   useEffect(() => {
     const player = new UniversalAudioPlayer((isPlaying) => {
       setMusicOn(isPlaying);
+      if (isPlaying) setUserInteracted(true);
     });
 
     synthRef.current = player;
@@ -1321,6 +1331,7 @@ export default function App() {
       synthRef.current.stop();
       setMusicOn(false);
     } else {
+      setUserInteracted(true);
       await synthRef.current.unmute();
     }
   };
@@ -1416,10 +1427,12 @@ With warm regards,
           />
 
           <div className="animate-magical-crest relative flex flex-col items-center text-center px-6">
-            <IndianSilverJubileeCrest
-              theme={theme}
-              className="w-36 h-36 md:w-44 md:h-44 mb-4"
-            />
+            <div className="relative w-44 h-44 sm:w-52 sm:h-52 mx-auto mb-4 flex items-center justify-center overflow-visible">
+              <IndianSilverJubileeCrest
+                theme={theme}
+                className="w-full h-full object-contain overflow-visible drop-shadow-[0_10px_25px_rgba(0,0,0,0.65)] animate-spin-slow"
+              />
+            </div>
             <p
               className="text-xs uppercase tracking-[0.38em]"
               style={{ color: theme.accent }}
@@ -1481,7 +1494,7 @@ With warm regards,
 
               {paletteDrawerOpen && (
                 <div
-                  className="absolute right-0 sm:right-auto sm:left-0 mt-2.5 w-72 max-w-[90vw] rounded-2xl border p-3 shadow-2xl z-50 backdrop-blur-xl"
+                  className="absolute right-2 sm:right-auto sm:left-0 mt-2.5 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border p-3 shadow-2xl z-50 backdrop-blur-xl"
                   style={{
                     backgroundColor: theme.bgMid,
                     borderColor: `rgba(${theme.accentRgb}, 0.4)`,
@@ -1608,10 +1621,12 @@ With warm regards,
               A Quarter Century of Love, Devotion &amp; Grace
             </p>
 
-            <IndianSilverJubileeCrest
-              theme={theme}
-              className="w-32 h-32 sm:w-36 sm:h-36 mx-auto mb-6"
-            />
+            <div className="relative w-44 h-44 sm:w-52 sm:h-52 mx-auto mb-6 flex items-center justify-center overflow-visible">
+              <IndianSilverJubileeCrest
+                theme={theme}
+                className="w-full h-full object-contain overflow-visible drop-shadow-[0_10px_25px_rgba(0,0,0,0.65)] animate-spin-slow"
+              />
+            </div>
 
             <p
               className="text-xs uppercase tracking-[0.32em] mb-3"
@@ -1741,6 +1756,26 @@ With warm regards,
           </div>
         </div>
       </section>
+
+      {/* BETTER POSITIONED FLOATING SOUND PROMPT (Bottom-Right Floating Badge) */}
+      {!userInteracted && !musicOn && (
+        <div className="fixed bottom-6 right-6 z-40 animate-bounce">
+          <button
+            onClick={toggleMusic}
+            className="flex items-center gap-2 px-5 py-3 rounded-full border shadow-[0_10px_30px_rgba(0,0,0,0.85)] transition hover:scale-105 backdrop-blur-xl"
+            style={{
+              backgroundColor: theme.surfaceDeep,
+              borderColor: `rgba(${theme.accentRgb}, 0.7)`,
+              color: theme.accent,
+            }}
+          >
+            <Music2 className="w-4 h-4 animate-pulse text-white" />
+            <span className="text-[11px] uppercase tracking-[0.18em] font-semibold text-white">
+              Play Music 🎵
+            </span>
+          </button>
+        </div>
+      )}
 
       <section
         id="glance"
